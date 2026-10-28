@@ -56,4 +56,5 @@ public class ControllerElement {
         panelService.delete(id); // или service.delete(id)
         return "redirect:/"; // после удаления сразу на список
     }
+
 }
