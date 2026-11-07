@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Создать панель</title>
+</head>
+<body>
+<h2 th:text="${newPanel.id != null ? 'Редактирование панели #' + newPanel.id : 'Создание новой панели'}"></h2>
+
+<form th:action="@{/panels/save}" th:object="${newPanel}" method="post">
+
+    <!-- id: пустой при создании, заполненный при редактировании -->
+    <input type="hidden" th:field="*{id}" />
+    <input type="hidden" name="objectId" th:value="${objectId}" />
+
+    <select th:field="*{nameElement}" required>
+        <option value="" disabled>Выберите тип панели</option>
+        <option th:each="option : ${availableNames}"
+                th:value="${option}"
+                th:text="${option.displayName}"></option>
+    </select>
+
+    <!-- Блок, который виден только при редактировании -->
+    <div th:if="${newPanel.id != null}">
+         <p>Текущее состояние: <span th:text="${newPanel.outputsJsonString}"></span></p>
+        <!-- сюда потом встанут чекбоксы из JSON -->
+    </div>
+
+    <button type="submit" th:text="${newPanel.id != null ? 'Сохранить изменения' : 'Далее: настроить параметры'}"></button>
+</form>
+</body>
+</html>

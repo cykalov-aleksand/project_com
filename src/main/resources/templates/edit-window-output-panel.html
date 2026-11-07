@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="${pageTitle}">Настройка выходов панели</title>
+  <style>
+    :root {
+      --primary: #007bff;
+      --primary-dark: #0069d9;
+      --border: #dee2e6;
+      --bg-soft: #f8f9fa;
+      --danger: #dc3545;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 960px;
+      margin: 24px auto;
+      padding: 0 16px;
+      color: #212529;
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      background: var(--bg-soft);
+    }
+    .card h2 { margin: 0 0 8px; font-size: 18px; }
+    .panel-name { font-weight: bold; }
+
+.outputs-table { border-collapse: collapse; width: 100%; }
+.outputs-table th, .outputs-table td {
+  border: 1px solid var(--border);
+  padding: 10px 6px;
+  text-align: center;
+}
+.outputs-table thead th {
+  background: #f0f0f0;
+  font-size: 12px;
+  color: #495057;
+}
+.byte-label {
+  background: #f0f0f0;
+  font-weight: bold;
+  white-space: nowrap;
+  color: #495057;
+}
+.bit-col { width: 11%; }          /* 8 бит + колонка "Байт" ≈ поровну */
+.byte-col { width: 12%; }
+
+.bit-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+}
+.bit-cell input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+.bit-cell:hover { color: var(--primary-dark); }
+
+
+    .hint { color: #6c757d; font-size: 13px; margin-top: 12px; }
+    .error {
+      color: var(--danger);
+      padding: 12px;
+      background: #ffe6e6;
+      border-radius: 6px;
+    }
+    .btn-save {
+      padding: 10px 20px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn-save:hover { background: var(--primary-dark); }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2 th:text="${pageTitle}"></h2>
+  <p>Панель: <span class="panel-name" th:text="${panelName}"></span></p>
+</div>
+
+<!-- Важно: форма должна знать, к какой панели и ячейке относится -->
+<form th:action="@{/panels/json/output/save}" th:object="${newPanel}" method="post">
+  <input type="hidden" th:field="*{id}" />
+  <input type="hidden" name="objectId" th:value="${objectId}" />
+
+  <div class="card">
+    <div class="card" th:if="${not #lists.isEmpty(outputGroups)}">
+    <table class="outputs-table">
+      <thead>
+      <tr>
+        <th class="byte-col">Байт</th>
+        <th th:each="i : ${#numbers.sequence(0, 7)}" class="bit-col">
+          бит <span th:text="${i}"></span>
+        </th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="entry : ${outputGroups}">
+        <td class="byte-label">
+          <span th:text="${entry.key} + '-й'">1-й</span>
+        </td>
+        <td th:each="opt, stat : ${entry.value}">
+          <label class="bit-cell">
+            <input type="checkbox"
+                   name="outputs"
+                   th:value="${opt.name()}"
+                   th:title="'Маска: 0x' + ${opt.maskHex()}" />
+            <span th:text="${opt.displayName}"></span>
+          </label>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <p th:if="${#lists.isEmpty(outputGroups)}" class="error">
+    Список выходов пуст — проверьте настройки панели.
+  </p>
+
+  <div class="hint">
+    Выбранные выходы будут упакованы в битовые маски и сохранены в конфигурацию панели.
+  </div>
+
+  <button type="submit" class="btn-save">Сохранить</button>
+</form>
+
+</body>
+</html>

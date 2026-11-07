@@ -1,7 +1,8 @@
 package com.example.projectCom.controller;
 
 import com.example.projectCom.dto.EquipmentObjectDto;
-import com.example.projectCom.service.PanelService;
+import com.example.projectCom.service.ObjectService;
+import com.fazecast.jSerialComm.SerialPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,17 +14,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import java.util.List;
 
 
-
 @Controller
 @RequiredArgsConstructor
 public class ControllerElement {
 
-    private final PanelService panelService;
+    private final ObjectService panelService;
 
     @GetMapping("/")
     public String find(Model model) {
-       List<EquipmentObjectDto> element=panelService.findAllObject();
-       // model.addAttribute("listElement", element);
+        SerialPort[] listComPort = SerialPort.getCommPorts();
+        model.addAttribute("listComPort",listComPort);
+        List<EquipmentObjectDto> element=panelService.findAllObject();
         model.addAttribute("listElement", (element != null) ? element : "");
         return "foundation";
     }
@@ -33,7 +34,7 @@ public class ControllerElement {
     public String showEditForm(@PathVariable Long id, Model model) {
         EquipmentObjectDto dto = panelService.findById(id);
         System.out.println(dto);
-         model.addAttribute("objectDto", dto);
+        model.addAttribute("objectDto", dto);
         return "create-object";
     }
 
@@ -47,7 +48,6 @@ public class ControllerElement {
     // Сохранение (и создание, и обновление)
     @PostMapping("/save")
     public String saveObject(@ModelAttribute("objectDto") EquipmentObjectDto dto) {
-        System.out.println(dto);
         panelService.saveObjectDto(dto);
         return "redirect:/";
     }
