@@ -18,13 +18,7 @@ repositories {
 }
 
 dependencies {
-	// Source: https://mvnrepository.com/artifact/com.vladmihalcea/hibernate-types-60
-	//implementation 'com.vladmihalcea:hibernate-types-60:2.21.1'
-	// Source: https://mvnrepository.com/artifact/com.github.the-alchemist/hibernate-postgresql
-//	implementation 'com.github.the-alchemist:hibernate-postgresql:1.0.21'
-	// Source: https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-core
-//	implementation 'org.hibernate.orm:hibernate-core:7.4.13.Final'
-	// Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-jpa
+	implementation 'com.fazecast:jSerialComm:2.11.4'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa:4.1.2'
 	runtimeOnly 'org.flywaydb:flyway-database-postgresql'
 	// Source: https://mvnrepository.com/artifact/org.slf4j/slf4j-api

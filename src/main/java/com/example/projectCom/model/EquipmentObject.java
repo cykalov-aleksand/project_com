@@ -1,18 +1,17 @@
 package com.example.projectCom.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
 import java.util.Set;
 
 @Entity
 @Table(name = "equipment_object")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class EquipmentObject {
 
     @Id
@@ -24,11 +23,11 @@ public class EquipmentObject {
 
     @Column(name = "description", length = 500)
     private String description;
-
+    @UpdateTimestamp
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
     // Связь: один объект → много панелей
     @OneToMany(mappedBy = "object", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<Panel> panels;
+    private Set<Panels> panels;
 }

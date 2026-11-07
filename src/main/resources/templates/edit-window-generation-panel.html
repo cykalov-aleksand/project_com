@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель генератора</title>
+</head>
+
+<!-- Важно: форма должна знать, к какой панели и ячейке относится -->
+<body>
+<h2 th:text="${pageTitle}"></h2>
+<form th:action="@{/panels/json/output/save}" th:object="${newPanel}" method="post">
+    <input type="hidden" th:field="*{id}" />
+    <input type="hidden" name="objectId" th:value="${objectId}" />
+
+      <p>Панель: <span th:text="${panelName}"></span></p>
+
+    <p>Параметры этой панели будут настроены на следующем этапе.</p>
+
+    <button type="submit">Сохранить</button>
+</form>
+</body>
+</html>

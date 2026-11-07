@@ -6,30 +6,15 @@ import com.example.projectCom.model.EquipmentObject;
 import com.example.projectCom.repository.ObjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class PanelService {
+public class ObjectService {
     private final ObjectRepository objectRepository;
     private final ObjectMapperDto objectMapperDto;
-    private final ObjectMapper objectMapper;
 
-       public String mapToJson(Map<String, Boolean> map) throws IOException {
-        return objectMapper.writeValueAsString(map);
-    }
-
-    public Map<String, Boolean> jsonToMap(String json) throws IOException {
-        if (json == null || json.isBlank()) {
-            return Map.of();
-        }
-        return objectMapper.readValue(json, new TypeReference<Map<String, Boolean>>() {});
-    }
     public List<EquipmentObjectDto>findAllObject(){
       return objectRepository.findAll().stream().map(objectMapperDto::toDto).toList();
     }
@@ -43,6 +28,15 @@ public class PanelService {
         EquipmentObject entity = objectMapperDto.toEntity(dto);
         EquipmentObject saved = objectRepository.save(entity);
         return objectMapperDto.toDto(saved);
+    }
+    public String getNameById(Long objectId){
+        return objectRepository.findById(objectId)
+                .orElseThrow(() -> new RuntimeException("Объект с ID " + objectId + " не найден"))
+                .getName();
+    }
+    public EquipmentObject getById(Long objectId){
+           return objectRepository.findById(objectId)
+                   .orElseThrow(() -> new RuntimeException("Объект не найден"));
     }
     public void delete(Long id){
            objectRepository.deleteById(id);

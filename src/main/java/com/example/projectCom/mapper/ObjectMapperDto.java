@@ -24,6 +24,7 @@ public class ObjectMapperDto {
         EquipmentObjectDto dto = new EquipmentObjectDto();
         dto.setId(object.getId());
         dto.setName(object.getName());
-         return dto;
+        return dto;
     }
 }
+
