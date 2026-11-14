@@ -13,7 +13,6 @@
 </head>
 <body>
 <h1 th:text="${objectDto != null ? 'Редактирование ячейки' : 'Создание новой ячейки'}">Создание новой ячейки</h1>
-
 <form th:action="@{/save}" th:object="${objectDto}" method="post">
     <!-- Скрытое поле с id -->
     <input type="hidden" th:field="*{id}" />

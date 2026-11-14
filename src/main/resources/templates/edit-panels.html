@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Список панелей</title>
+    <style>
+        .page-container {
+            max-width: 80%;
+            padding: 16px;
+        }
+.message-banner {
+    padding: 16px 20px;       /* Чуть больше воздуха вокруг текста */
+    margin-bottom: 20px;      /* Отступ до заголовка побольше, чтобы не слипалось */
+    border-radius: 4px;
+    border: 2px solid transparent;
+    display: flex;
+    align-items: center;      /* Иконка и текст по одной линии по центру */
+    gap: 12px;                /* Расстояние между иконкой и текстом */
+    box-sizing: border-box;   /* Чтобы padding не ломал ширину */
+}
+
+.message-error {
+    background-color: #fff;   /* Чистый белый фон — контраст максимальный */
+    color: #212121;           /* Почти чёрный текст, читается лучше красного */
+    border-color: #d32f2f;    /* Яркая красная рамка — сразу видно */
+
+    /* ГАРАНТИЯ размера и жирности — это перебьёт любые другие стили */
+    font-size: 17px !important;
+    font-weight: 600 !important;
+}
+
+.message-success {
+    background-color: #fff;
+    color: #2e7d32;           /* Тёмно-зелёный, строгий */
+    border-color: #4caf50;
+
+    font-size: 17px !important;
+    font-weight: 600 !important;
+}
+
+.msg-icon {
+    font-size: 20px;          /* Иконка чуть крупнее текста, чтобы цеплять взгляд */
+    line-height: 1;
+    flex-shrink: 0;           /* Чтобы иконку не сплющивало на узких экранах */
+}
+        .data-table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 16px; /* отступ между таблицей и кнопками */
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .data-table th {
+            background-color: #f0f0f0;
+            text-align: left;
+        }
+        .col-id { width: 60px; }
+        .col-name { width: 100px; }
+        .col-condition { width: 240px; }
+        .col-desc {width: 100;}
+
+        .actions-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+.btn-create {
+            padding: 10px 16px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        /* Кнопка справа: отдельный контейнер с выравниванием */
+        .btn-back-wrapper {
+            margin-left: auto; /* прижимает этот блок вправо */
+        }
+
+        .btn-back {
+            padding: 10px 16px;
+            background-color: #6c757d; /* серый цвет, чтобы было видно */
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        .action-link {
+             color: #007bff;
+             text-decoration: none;
+              margin-right: 12px;
+        }
+        .btn-delete {
+    padding: 4px 10px;
+    background-color: #d9534f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+    </style>
+</head>
+<body>
+<div class="page-container">
+    <div th:if="${errorMessage}" class="message-banner message-error">
+        <span class="msg-icon">⚠</span>
+        <span th:text="${errorMessage}"></span>
+    </div>
+
+    <div th:if="${successMessage}" class="message-banner message-success">
+        <span class="msg-icon">✔</span>
+        <span th:text="${successMessage}"></span>
+    </div>
+
+    <h2>Список панелей для элемента: <span th:text="${objectName}"></span> с ID=<span th:text="${objectId}"></span></h2>
+
+    <table class="data-table">
+        <thead>
+        <tr>
+            <th class="col-id">Id панели</th>
+            <th class="col-name">Название панели</th>
+            <th class="col-condition">Состояние панели</th>
+            <th class="col-desc">Действия</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Если список пустой -->
+        <tr th:if="${#lists.isEmpty(panels)}">
+            <td colspan="4" style="text-align: center; padding: 16px;">
+                Список панелей для элемента: <span th:text="${objectName}"></span> пуст. Создайте главную панель и панель синхронизации для данной ячейки, а затем сформируйте тестовые сигналы.
+            </td>
+        </tr>
+        <tr th:each="panel : ${panels}">
+            <td class="col-id" th:text="${panel.id}"></td>
+            <td class="col-name" th:text="${panel.nameElement.displayName}"></td>
+            <td class="col-condition"
+                th:text="${#strings.isEmpty(panel.listCondition) ? 'Не настроена' : panel.listCondition}">
+            </td>
+            <td>
+                <a th:href="@{|/panels/${panel.id}/edit|}" class="action-link">Редактировать</a>
+                <form th:action="@{/panels/delete/{id}(id=${panel.id})}" method="post" style="display:inline;">
+                    <button type="submit" class="btn-delete">Удалить</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="actions-row">
+        <a th:href="@{/panels/create(objectId=${objectId})}" class="btn-create">Создать новую панель</a>
+
+        <!-- Этот блок с margin-left: auto прижмёт кнопку вправо -->
+        <div class="btn-back-wrapper">
+            <a href="/" class="btn-back">Вернуться к списку ячеек</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
