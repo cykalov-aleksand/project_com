@@ -3,7 +3,7 @@ package org.example.projectCom.service.panel_output_switch;
 import org.example.projectCom.model.Panels;
 import org.example.projectCom.repository.PanelsRepository;
 import org.example.projectCom.service.OutputUtils;
-import org.example.projectCom.service.PanelValidationException;
+import org.example.projectCom.service.errors.PanelValidationException;
 import org.example.projectCom.service.PanelsService;
 import org.example.projectCom.setup_controller.OutputOption;
 import lombok.RequiredArgsConstructor;

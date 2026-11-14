@@ -2,7 +2,7 @@ package org.example.projectCom.service.panel_generation;
 
 import org.example.projectCom.model.Panels;
 import org.example.projectCom.repository.PanelsRepository;
-import org.example.projectCom.service.NoFreeOutputsException;
+import org.example.projectCom.service.errors.NoFreeOutputsException;
 import org.example.projectCom.service.OutputUtils;
 import org.example.projectCom.service.PanelsService;
 import org.example.projectCom.setup_controller.OutputOption;
