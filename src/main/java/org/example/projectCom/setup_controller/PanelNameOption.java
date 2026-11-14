@@ -2,8 +2,6 @@ package org.example.projectCom.setup_controller;
 
 import lombok.Getter;
 
-import java.util.List;
-
 @Getter
 public enum PanelNameOption {
     PANEL_OUTPUT_SWITCHING((byte) 0x01, "Панель коммутации выходов", false),
