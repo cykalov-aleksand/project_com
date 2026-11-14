@@ -95,37 +95,52 @@
 
 <!-- Важно: форма должна знать, к какой панели и ячейке относится -->
 <form th:action="@{/panels/json/output/save}" th:object="${newPanel}" method="post">
-  <input type="hidden" th:field="*{id}" />
+  <input type="hidden" name="panelId" th:value="${newPanel.id}" />
   <input type="hidden" name="objectId" th:value="${objectId}" />
 
   <div class="card">
     <div class="card" th:if="${not #lists.isEmpty(outputGroups)}">
-    <table class="outputs-table">
-      <thead>
-      <tr>
-        <th class="byte-col">Байт</th>
-        <th th:each="i : ${#numbers.sequence(0, 7)}" class="bit-col">
-          бит <span th:text="${i}"></span>
-        </th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:each="entry : ${outputGroups}">
-        <td class="byte-label">
-          <span th:text="${entry.key} + '-й'">1-й</span>
-        </td>
-        <td th:each="opt, stat : ${entry.value}">
-          <label class="bit-cell">
-            <input type="checkbox"
-                   name="outputs"
-                   th:value="${opt.name()}"
-                   th:title="'Маска: 0x' + ${opt.maskHex()}" />
-            <span th:text="${opt.displayName}"></span>
-          </label>
-        </td>
-      </tr>
-      </tbody>
-    </table>
+      <table class="outputs-table">
+        <thead>
+        <tr>
+          <th class="byte-col">Байт</th>
+          <th th:each="i : ${#numbers.sequence(0, 7)}" class="bit-col">
+            бит <span th:text="${i}"></span>
+          </th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="entry : ${outputGroups}">
+          <td class="byte-label">
+            <span th:text="${entry.key} + '-й'">1-й</span>
+          </td>
+          <td th:each="opt, stat : ${entry.value}">
+            <label class="bit-cell">
+              <!-- канал, занятый другой панелью: показываем выбранным и блокируем -->
+              <input type="checkbox"
+                     th:if="${takenByOthers.contains(opt)}"
+                     th:checked="true"
+                     disabled
+                     th:title="'Занят другой панелью'" />
+              <input type="hidden"
+                     th:if="${takenByOthers.contains(opt)}"
+                     name="outputs"
+                     th:value="${opt.name()}" />
+
+              <!-- обычный канал: работает и отправляется как раньше -->
+              <input type="checkbox"
+                     th:unless="${takenByOthers.contains(opt)}"
+                     name="outputs"
+                     th:value="${opt.name()}"
+                     th:checked="${selected != null and selected.contains(opt)}"
+                     th:title="'Маска: 0x' + ${opt.maskHex()}" />
+
+              <span th:text="${opt.displayName}"></span>
+            </label>
+          </td>
+        </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 

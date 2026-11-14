@@ -13,16 +13,16 @@
     <input type="hidden" th:field="*{id}" />
     <input type="hidden" name="objectId" th:value="${objectId}" />
 
-    <select th:field="*{nameElement}" required>
+    <select name="panelNameOption" required>
         <option value="" disabled>Выберите тип панели</option>
         <option th:each="option : ${availableNames}"
-                th:value="${option}"
+                th:value="${option.name()}"
                 th:text="${option.displayName}"></option>
     </select>
 
     <!-- Блок, который виден только при редактировании -->
     <div th:if="${newPanel.id != null}">
-         <p>Текущее состояние: <span th:text="${newPanel.outputsJsonString}"></span></p>
+        <p>Текущее состояние: <span th:text="${newPanel.outputsJsonString}"></span></p>
         <!-- сюда потом встанут чекбоксы из JSON -->
     </div>
 
