@@ -79,7 +79,6 @@
     </style>
 </head>
 <body>
-
 <div class="card">
     <h2>Выберите COM порт для работы с коммутатором</h2>
     <p th:if="${#lists.isEmpty(listComPort)}" class="error" style="margin-top: 0;">
@@ -95,7 +94,15 @@
 </div>
 
 <h1>Список ячеек</h1>
-
+<div class="card">
+    <form th:action="@{/}" method="get" class="search-form">
+        <input type="text" name="search" class="search-input"
+               placeholder="Введите название элемента..."
+               th:value="${search}">
+        <button type="submit" class="btn">Найти</button>
+        <a th:href="@{/}" class="action-link">Сбросить</a>
+    </form>
+</div>
 <table class="data-table">
     <thead>
     <tr>
@@ -106,7 +113,7 @@
     </thead>
     <tbody>
     <tr th:if="${#lists.isEmpty(listElement)}" class="empty-row">
-        <td colspan="3">Список ячеек пуст. Создайте первый элемент.</td>
+        <td colspan="3">Список элементов пуст. Создайте элемент.</td>
     </tr>
     <tr th:each="elem : ${listElement}">
         <td th:text="${elem.id}" class="col-id"></td>

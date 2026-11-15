@@ -6,10 +6,7 @@ import com.fazecast.jSerialComm.SerialPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -20,11 +17,16 @@ public class ControllerElement {
     private final ObjectService panelService;
 
     @GetMapping("/")
-    public String find(Model model) {
+    public String find(@RequestParam(required = false) String search, Model model) {
         SerialPort[] listComPort = SerialPort.getCommPorts();
-        model.addAttribute("listComPort",listComPort);
-        List<EquipmentObjectDto> element=panelService.findAllObject();
-        model.addAttribute("listElement", (element != null) ? element : "");
+        model.addAttribute("listComPort", listComPort);
+
+        List<EquipmentObjectDto> element = (search == null || search.isBlank())
+                ? panelService.findAllObject()
+                : panelService.findByName(search);
+
+        model.addAttribute("listElement", element);
+        model.addAttribute("search", search);
         return "foundation";
     }
 

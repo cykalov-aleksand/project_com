@@ -23,8 +23,13 @@ public class ObjectService {
                 .orElseThrow(() -> new RuntimeException("Объект не найден"));
         return objectMapperDto.toDto(entity);
     }
+    public List<EquipmentObjectDto> findByName(String name){
+        String clean = name == null ? "" : name.trim();
+        return objectRepository.findObjectByNameContaining(clean).stream().map(objectMapperDto::toDto).toList();
+    }
 
     public EquipmentObjectDto saveObjectDto(EquipmentObjectDto dto) {
+        dto.setName(dto.getName().toUpperCase());
         EquipmentObject entity = objectMapperDto.toEntity(dto);
         EquipmentObject saved = objectRepository.save(entity);
         return objectMapperDto.toDto(saved);
