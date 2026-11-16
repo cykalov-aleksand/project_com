@@ -79,23 +79,42 @@
     </style>
 </head>
 <body>
-
 <div class="card">
     <h2>Выберите COM порт для работы с коммутатором</h2>
+
     <p th:if="${#lists.isEmpty(listComPort)}" class="error" style="margin-top: 0;">
         COM-порты не обнаружены. Подключите устройство и обновите страницу.
     </p>
-    <select name="nameComPort" required>
-        <option value="" disabled>Выберите COM порт</option>
-        <option th:each="port : ${listComPort}"
-                th:value="${port.systemPortName}"
-                th:text="${port.descriptivePortName}"></option>
-    </select>
+
+    <p th:if="${currentPortName != null}" class="hint">
+        Текущий порт: <strong th:text="${currentPortName}"></strong>
+    </p>
+
+    <p th:if="${portError}" class="error" th:text="${portError}"></p>
+    <p th:if="${portMessage}" class="hint" th:text="${portMessage}"></p>
+
+    <form th:action="@{/com_port}" method="get">
+        <select name="nameComPort" required>
+            <option value="" disabled>Выберите COM порт</option>
+            <option th:each="port : ${listComPort}"
+                    th:value="${port.systemPortName}"
+                    th:text="${port.descriptivePortName}"></option>
+        </select>
+        <button type="submit" class="btn">Выбрать</button>
+    </form>
     <p class="hint">Порт используется для обмена с панелями коммутации во время сеанса работы.</p>
 </div>
 
 <h1>Список ячеек</h1>
-
+<div class="card">
+    <form th:action="@{/}" method="get" class="search-form">
+        <input type="text" name="search" class="search-input"
+               placeholder="Введите название элемента..."
+               th:value="${search}">
+        <button type="submit" class="btn">Найти</button>
+        <a th:href="@{/}" class="action-link">Сбросить</a>
+    </form>
+</div>
 <table class="data-table">
     <thead>
     <tr>
@@ -106,7 +125,7 @@
     </thead>
     <tbody>
     <tr th:if="${#lists.isEmpty(listElement)}" class="empty-row">
-        <td colspan="3">Список ячеек пуст. Создайте первый элемент.</td>
+        <td colspan="3">Список элементов пуст. Создайте элемент.</td>
     </tr>
     <tr th:each="elem : ${listElement}">
         <td th:text="${elem.id}" class="col-id"></td>

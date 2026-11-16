@@ -4,6 +4,8 @@ package org.example.projectCom.controller;
 import org.example.projectCom.dto.PanelDto;
 import org.example.projectCom.model.Panels;
 import org.example.projectCom.service.*;
+import org.example.projectCom.service.errors.NoFreeOutputsException;
+import org.example.projectCom.service.errors.PanelValidationException;
 import org.example.projectCom.service.panel_generation.PanelGeneration;
 import org.example.projectCom.service.panel_output_switch.PanelOutputSwitch;
 import org.example.projectCom.service.panel_synchronisation.PanelSynchronisation;

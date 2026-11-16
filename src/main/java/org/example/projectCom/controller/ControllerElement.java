@@ -4,27 +4,47 @@ import org.example.projectCom.dto.EquipmentObjectDto;
 import org.example.projectCom.service.ObjectService;
 import com.fazecast.jSerialComm.SerialPort;
 import lombok.RequiredArgsConstructor;
+import org.example.projectCom.service.SerialPortService;
+import org.example.projectCom.service.errors.SerialPortException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
 public class ControllerElement {
-
+    private final SerialPortService serialPortService;
     private final ObjectService panelService;
-
+    @GetMapping("/com_port")
+    public String choiceComPort(@RequestParam String nameComPort, RedirectAttributes ra) {
+        try {
+            serialPortService.open(nameComPort);
+            ra.addFlashAttribute("portMessage", "Порт " + nameComPort + " открыт");
+        } catch (SerialPortException e) {
+            ra.addFlashAttribute("portError", e.getMessage());
+        }
+        return "redirect:/";
+    }
     @GetMapping("/")
-    public String find(Model model) {
-        SerialPort[] listComPort = SerialPort.getCommPorts();
-        model.addAttribute("listComPort",listComPort);
-        List<EquipmentObjectDto> element=panelService.findAllObject();
-        model.addAttribute("listElement", (element != null) ? element : "");
+    public String find(@RequestParam(required = false) String search, Model model) {
+        SerialPort[] listComPort;
+        try {
+            listComPort = SerialPort.getCommPorts();
+        } catch (Exception e) {
+            listComPort = new SerialPort[0];
+        }
+        model.addAttribute("listComPort", listComPort);
+
+        List<EquipmentObjectDto> element = (search == null || search.isBlank())
+                ? panelService.findAllObject()
+                : panelService.findByName(search);
+
+        model.addAttribute("listElement", element);
+        model.addAttribute("search", search);
+        model.addAttribute("currentPortName", serialPortService.getCurrentPortName());
         return "foundation";
     }
 
