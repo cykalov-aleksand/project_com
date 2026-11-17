@@ -8,4 +8,5 @@ public class PanelDto {
     private Long id;
     private PanelNameOption nameElement;
     private String listCondition;
+    private Long objectId;
 }

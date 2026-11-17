@@ -28,6 +28,7 @@ public class PanelsService {
     private final PanelsMapperDto panelsMapperDto;
 
     public static final int SWITCHING_PAYLOAD_SIZE = 5;
+    @Transactional(readOnly = true)
     public List<PanelDto> findPanelsIdObject(Long objectId) {
         List<Panels> panelsList = panelsRepository.findPanels(objectId);
         return panelsList.stream().map(panelsMapperDto::toDto).toList();
@@ -174,5 +175,13 @@ public class PanelsService {
         if (!allowed.containsAll(selected)) {
             throw new IllegalArgumentException(errorMessage);
         }
+    }
+    @Transactional
+    public Long deletePanel(Long panelId) {
+        Panels panel = panelsRepository.findById(panelId)
+                .orElseThrow(() -> new EntityNotFoundException("Панель с ID " + panelId + " не найдена"));
+        Long objectId = panel.getObject().getId();
+        panelsRepository.delete(panel);
+        return objectId;
     }
 }

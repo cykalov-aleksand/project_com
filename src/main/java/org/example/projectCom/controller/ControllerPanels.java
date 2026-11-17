@@ -1,6 +1,7 @@
 package org.example.projectCom.controller;
 
 
+import org.example.projectCom.cache.CachePanelService;
 import org.example.projectCom.dto.PanelDto;
 import org.example.projectCom.model.Panels;
 import org.example.projectCom.service.*;
@@ -35,11 +36,13 @@ public class ControllerPanels {
     private final PanelGeneration panelGenerationIml;
     private final PanelSynchronisation panelSynchronisationIml;
     private final PanelOutputSwitch panelOutputSwitchIml;
+    private final CachePanelService cachePanelService;
 
     @GetMapping("/panels/edit/{id}/{name}")
     public String showEditPanelsNameObject(@PathVariable Long id, @PathVariable String name,
                                            Model model) {
-        List<PanelDto> panels = panelsService.findPanelsIdObject(id);
+        List<PanelDto> panels=cachePanelService.findPanelsIdObject(id);
+        //List<PanelDto> panels = panelsService.findPanelsIdObject(id);
         model.addAttribute("availableNames", PanelNameOption.values());
         model.addAttribute("panels", panels);
         model.addAttribute("objectName", name);

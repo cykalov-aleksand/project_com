@@ -47,7 +47,7 @@ public class SerialPortService {
         open(name);
     }
 
-    public void close() {
+    public synchronized void close() {
         if (currentPort != null && currentPort.isOpen()) {
             currentPort.closePort();
         }
