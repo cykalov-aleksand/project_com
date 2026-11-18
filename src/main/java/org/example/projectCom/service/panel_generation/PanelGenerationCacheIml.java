@@ -9,6 +9,7 @@ import org.example.projectCom.service.OutputUtils;
 import org.example.projectCom.service.PanelsService;
 import org.example.projectCom.service.errors.NoFreeOutputsException;
 import org.example.projectCom.setup_controller.OutputOption;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,11 +17,11 @@ import java.util.HashSet;
 import java.util.List;
 
 @Service
+@Primary
     @RequiredArgsConstructor
     public class PanelGenerationCacheIml implements PanelGeneration {
         private final PanelsService panelsService;
         private final CachePanelService cachePanelService;
-        private final PanelsRepository panelsRepository; // останется только для delete, см. ниже
 
     @Transactional
     public Panels save(Long panelId, List<String> outputs) {
@@ -53,8 +54,7 @@ import java.util.List;
     }
 
     @Override
-    @Transactional
-    public Long delete(Long panelId) {
+     public Long delete(Long panelId) {
         return cachePanelService.deletePanel(panelId);
     }
     }

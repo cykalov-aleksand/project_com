@@ -8,6 +8,7 @@ import org.example.projectCom.service.OutputUtils;
 import org.example.projectCom.service.PanelsService;
 import org.example.projectCom.service.errors.PanelValidationException;
 import org.example.projectCom.setup_controller.OutputOption;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ import static org.example.projectCom.service.PanelsService.SWITCHING_PAYLOAD_SIZ
 import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_OUTPUT_SWITCHING;
 
 @Service
+@Primary
     @RequiredArgsConstructor
     public class PanelOutputSwitchCacheIml implements PanelOutputSwitch {
         private final PanelsService panelsService;
@@ -79,7 +81,6 @@ import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_OUTP
                     objectId);
         }
         @Override
-        @Transactional
         public Long delete(Long panelId) {
             // проверка занятости — из кэша, без БД
             Set<OutputOption> taken = cachePanelService.takenByOthers(panelId);

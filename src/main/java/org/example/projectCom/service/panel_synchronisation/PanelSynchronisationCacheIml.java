@@ -9,6 +9,7 @@ import org.example.projectCom.service.PanelsService;
 import org.example.projectCom.service.errors.PanelValidationException;
 import org.example.projectCom.setup_controller.OutputOption;
 import org.example.projectCom.setup_controller.SyncPeriodOption;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,11 +20,12 @@ import java.util.stream.Collectors;
 import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_SYNCHRONIZATION;
 
 @Service
+@Primary
     @RequiredArgsConstructor
     public class PanelSynchronisationCacheIml implements PanelSynchronisation {
         private final PanelsService panelsService;
         private final CachePanelService cachePanelService;
-
+    @Override
     @Transactional
     public Panels save(Long panelId, int divisor, List<String> outputs) {
         List<OutputOption> selected = OutputUtils.parseSelectedOutputs(outputs);
@@ -57,7 +59,7 @@ import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_SYNC
                 panelDto.getObjectId()
         );
     }
-        @Transactional
+    @Override
         public Long delete(Long panelId) {
             // панель из кэша: тип проверяем без БД
             PanelDto panelDto = cachePanelService.getPanelDtoById(panelId);
@@ -78,7 +80,6 @@ import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_SYNC
                                 ". Сначала удалите их");
             }
 
-            // удаление через кэш-слой: внутри — reload
             return cachePanelService.deletePanel(panelId);
         }
     }

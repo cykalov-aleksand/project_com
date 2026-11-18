@@ -31,12 +31,12 @@ import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_SYNC
 @Controller
 @RequiredArgsConstructor
 public class ControllerPanels {
-    private final PanelsService panelsService;
+    // private final PanelsService panelsService;
+    private final CachePanelService cachePanelService;
     private final ObjectService objectService;
     private final PanelGeneration panelGenerationIml;
     private final PanelSynchronisation panelSynchronisationIml;
     private final PanelOutputSwitch panelOutputSwitchIml;
-    private final CachePanelService cachePanelService;
 
     @GetMapping("/panels/edit/{id}/{name}")
     public String showEditPanelsNameObject(@PathVariable Long id, @PathVariable String name,
@@ -53,13 +53,13 @@ public class ControllerPanels {
     @PostMapping("/panels/save")
     public String savePanel(@RequestParam Long objectId,
                             @RequestParam PanelNameOption panelNameOption) {
-        Panels panel = panelsService.createPanel(objectId, panelNameOption);
+        Panels panel = cachePanelService.createPanel(objectId, panelNameOption);
         return "redirect:/panels/" + panel.getId();
     }
 
     @GetMapping("/panels/create")
     public String showCreatePanel(@RequestParam Long objectId, Model model) {
-        List<PanelNameOption> available = panelsService.getAvailablePanelTypes(objectId);
+        List<PanelNameOption> available = cachePanelService.getAvailablePanelTypes(objectId);
         model.addAttribute("newPanel", new Panels());
         model.addAttribute("objectId", objectId);
         model.addAttribute("availableNames", available);
@@ -69,15 +69,15 @@ public class ControllerPanels {
     @PostMapping("/panels/delete/{id}")
     public String deleteCell(@PathVariable Long id,
                              RedirectAttributes redirectAttributes) {
-        Panels panel;
+        PanelDto panel;
         try{
-            panel=panelsService.getPanelById(id);
+            panel=cachePanelService.getPanelDtoById(id);
         } catch (EntityNotFoundException e) {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Панель не найдена (возможно, уже удалена)");
             return "redirect:/";
         }
-        Long objectId=panel.getObject().getId();
+        Long objectId=panel.getObjectId();
         try{
             if (panel.getNameElement().isGeneratorType()) {
                 objectId = panelGenerationIml.delete(id);
@@ -96,16 +96,16 @@ public class ControllerPanels {
 
     @GetMapping("/panels/{panelId}")
     public String showConfigureOutputs(@PathVariable Long panelId, Model model) {
-        Panels panel = panelsService.getPanelById(panelId);
+        PanelDto panel = cachePanelService.getPanelDtoById(panelId);
         model.addAttribute("newPanel", panel);
-        model.addAttribute("objectId", panel.getObject().getId());
+        model.addAttribute("objectId", panel.getObjectId());
         model.addAttribute("pageTitle", "Настройка выходов панели c ID=" + panelId);
         model.addAttribute("panelName", panel.getNameElement().getDisplayName());
         model.addAttribute("outputGroups",
-                panelsService.groupOfPointersWeekends(panel.getNameElement(), panel.getObject().getId(), panelId));
-        model.addAttribute("takenByOthers", panelsService.takenByOthers(panelId));
+                cachePanelService.groupOfPointersWeekends(panel.getNameElement(), panel.getObjectId(), panelId));
+        model.addAttribute("takenByOthers", cachePanelService.takenByOthers(panelId));
         model.addAttribute("selectedOutputs", new LinkedHashSet<>(
-                OutputUtils.extractSelectedOutputs(panel.getOutputsJsonString(),
+                OutputUtils.extractSelectedOutputs(panel.getListCondition(),
                         OutputUtils.payloadOffset(panel.getNameElement()))));
         if (panel.getNameElement() == PANEL_OUTPUT_SWITCHING) {
             return "edit-window-output-panel";
@@ -113,10 +113,10 @@ public class ControllerPanels {
         if (panel.getNameElement() == PANEL_SYNCHRONIZATION) {
             model.addAttribute("syncPeriods", SyncPeriodOption.values());
             model.addAttribute("currentDivisor",
-                    OutputUtils.extractDivisor(panel.getOutputsJsonString()));
+                    OutputUtils.extractDivisor(panel.getListCondition()));
             model.addAttribute("selectedOutputs", new LinkedHashSet<>(
                     OutputUtils.extractSelectedOutputs(
-                            panel.getOutputsJsonString(),
+                            panel.getListCondition(),
                             OutputUtils.payloadOffset(panel.getNameElement()))));
             return "edit-window-synhronization-panel";
         }
@@ -174,19 +174,19 @@ public class ControllerPanels {
 
     @GetMapping("/panels/{panelId}/edit")
     public String showEditPanel(@PathVariable Long panelId, Model model) {
-        Panels panel = panelsService.getPanelById(panelId);
+        PanelDto panel = cachePanelService.getPanelDtoById(panelId);
         List<OutputOption> selected = OutputUtils.extractSelectedOutputs(
-                panel.getOutputsJsonString(),OutputUtils.payloadOffset(panel.getNameElement()));
+                panel.getListCondition(),OutputUtils.payloadOffset(panel.getNameElement()));
         model.addAttribute("pageTitle", "Редактирование панели: "
                 + panel.getNameElement().getDisplayName() + " c ID=" + panelId);
         model.addAttribute("panel", panel);
-        model.addAttribute("objectId", panel.getObject().getId());
-        model.addAttribute("outputGroups", panelsService.buildOutputGrid(panelId));
+        model.addAttribute("objectId", panel.getObjectId());
+        model.addAttribute("outputGroups", cachePanelService.buildOutputGrid(panelId));
         model.addAttribute("selected", selected);
-        model.addAttribute("takenByOthers", panelsService.takenByOthers(panelId));
+        model.addAttribute("takenByOthers", cachePanelService.takenByOthers(panelId));
         if (panel.getNameElement() == PANEL_SYNCHRONIZATION) {
             model.addAttribute("currentDivisor",
-                    OutputUtils.extractDivisor(panel.getOutputsJsonString()));
+                    OutputUtils.extractDivisor(panel.getListCondition()));
         }
         return "editing-panel";
     }
@@ -201,8 +201,8 @@ public class ControllerPanels {
                                 @RequestParam(required = false) Integer period,
                                 @RequestParam(required = false) List<String> outputs,
                                 RedirectAttributes redirectAttributes) {
-        Panels panel = panelsService.getPanelById(panelId);
-        Long objectId = panel.getObject().getId();
+        PanelDto panel = cachePanelService.getPanelDtoById(panelId);
+        Long objectId = panel.getObjectId();
         try {
             switch (panel.getNameElement()) {
                 case PANEL_OUTPUT_SWITCHING ->
