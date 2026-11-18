@@ -96,40 +96,28 @@ public class CachePanelService {
         }
     }
 
-    /** Общая точка обновления кэша после любой записи: сброс и немедленная перезагрузка. */
-    private void reload(Long objectId) {
-        panelsDtoCache.remove(objectId);
-        panelsDtoCache.put(objectId, panelsService.findPanelsIdObject(objectId));
-        logger.info("кэш перезагружен для объекта {}", objectId);
-    }
-
-    /** Явная инвалидация без перезагрузки — при промахе кэш сам подтянется из БД. */
-    public void evict(Long objectId) {
-        panelsDtoCache.remove(objectId);
-    }
-
     // ==================== ЗАПИСЬ ====================
 
     /** Создание панели: делегируем в сервис, после создания — перезагрузка кэша. */
     public Panels createPanel(Long objectId, PanelNameOption type) {
         Panels created = panelsService.createPanel(objectId, type);
-        reload(objectId);
-        logger.info("кэш восстановлен после создания панели {} типа {}", created.getId(), type);
+        panelsDtoCache.remove(objectId);
+        logger.info("кэш сброшен после создания панели {} типа {}", created.getId(), type);
         return created;
     }
 
     /** Запись JSON в панель: делегируем в сервис, после записи — перезагрузка кэша. */
-    public Panels persist(Panels panel, byte[] payload) {
+    public Panels persist(Panels panel, byte[] payload, Long objectId) {
         Panels saved = panelsService.persist(panel, payload);
-        reload(saved.getObject().getId());
-        logger.info("кэш восстановлен после записи панели {}", saved.getId());
+        panelsDtoCache.remove(objectId);
+        logger.info("кэш сброшен для объекта {} после записи панели {}", objectId, saved.getId());
         return saved;
     }
 
     // ==================== ПРОИЗВОДНЫЕ ЧТЕНИЯ ====================
 
     /** Доступные для создания типы панелей — из кэша. */
-    public List<PanelNameOption> getAvailablePanelTypes(Long objectId) {
+     public List<PanelNameOption> getAvailablePanelTypes(Long objectId) {
         Set<PanelNameOption> existingTypes = findPanelsIdObject(objectId).stream()
                 .map(PanelDto::getNameElement)
                 .collect(Collectors.toSet());
@@ -147,20 +135,18 @@ public class CachePanelService {
                 .toList();
     }
 
-    /** Проверка наличия панели заданного типа: из кэша. */
-    public boolean existsPanelType(Long objectId, PanelNameOption type) {
-        checkAndSwitch(objectId);
 
-        return findPanelsIdObject(objectId).stream()
+    /** Проверка наличия панели заданного типа: из кэша. */
+       public boolean existsPanelType(Long objectId, PanelNameOption type) {
+       return findPanelsIdObject(objectId).stream()
                 .map(PanelDto::getNameElement)
                 .anyMatch(type::equals);
     }
 
+
     /** Чтение строки JSON по указанному объекту с заданным типом панели — из кэша. */
     public String getPanelJson(Long objectId, PanelNameOption type) {
-        checkAndSwitch(objectId);
-
-        return findPanelsIdObject(objectId).stream()
+              return findPanelsIdObject(objectId).stream()
                 .filter(p -> p.getNameElement() == type)
                 .map(PanelDto::getListCondition)
                 .findFirst()
@@ -168,7 +154,7 @@ public class CachePanelService {
     }
 
     /** Список свободных элементов указанной панели по заданному объекту — из кэша. */
-    public List<OutputOption> listCheckboxPanelId(Long objectId, Long excludePanelId) {
+  public List<OutputOption> listCheckboxPanelId(Long objectId, Long excludePanelId) {
         List<OutputOption> free = OutputUtils.extractSelectedOutputs(
                 getPanelJson(objectId, PANEL_OUTPUT_SWITCHING));
 
@@ -182,7 +168,9 @@ public class CachePanelService {
         return free;
     }
 
+
     /** Сетка выходов панели — из кэша. */
+
     public Map<Integer, List<OutputOption>> buildOutputGrid(Long idPanel) {
         PanelDto panel = getPanelDtoById(idPanel);
 
@@ -205,6 +193,7 @@ public class CachePanelService {
     }
 
     /** Выходы, занятые другими панелями объекта — из кэша. */
+
     public Set<OutputOption> takenByOthers(Long idPanel) {
         PanelDto panel = getPanelDtoById(idPanel);
 
@@ -235,12 +224,24 @@ public class CachePanelService {
         return taken;
     }
 
+
     // ==================== ДЕЛЕГИРОВАНИЕ ====================
 
     /** Чистая логика построения сетки — делегируем, кэш подтягивается внутри цепочки сервиса. */
     public Map<Integer, List<OutputOption>> groupOfPointersWeekends(
             PanelNameOption panelNameOption, Long objectId, Long panelId) {
-        return panelsService.groupOfPointersWeekends(panelNameOption, objectId, panelId);
+        Map<Integer, List<OutputOption>> outputGroups = new LinkedHashMap<>();
+        for (OutputOption option : OutputOption.values()) {
+            outputGroups.computeIfAbsent(option.getByteIndex(), k -> new ArrayList<>()).add(option);
+        }
+        if (panelNameOption == PANEL_OUTPUT_SWITCHING) {
+            return outputGroups;
+        }
+        if (panelNameOption == PANEL_SYNCHRONIZATION) {
+            return OutputUtils.buildFixedGrid(
+                    OutputUtils.extractSelectedOutputs(getPanelJson(objectId, PANEL_OUTPUT_SWITCHING)));
+        }
+        return OutputUtils.buildFixedGrid(listCheckboxPanelId(objectId, panelId));
     }
 
     /** Проверка разрешённых выходов — делегируем. */
@@ -249,14 +250,12 @@ public class CachePanelService {
                               String errorMessage) {
         panelsService.assertAllowed(selected, allowed, errorMessage);
     }
-    public void reloadAfterDelete(Long objectId) {
-        reload(objectId);
-    }
+
     /** Удаление панели: делегируем в сервис, после удаления — перезагрузка кэша. */
     public Long deletePanel(Long panelId) {
         Long objectId = panelsService.deletePanel(panelId);
-        reload(objectId);
-        logger.info("кэш восстановлен после удаления панели {}", panelId);
+        panelsDtoCache.remove(objectId);
+        logger.info("кэш сброшен после удаления панели {}", panelId);
         return objectId;
     }
-}
+    }

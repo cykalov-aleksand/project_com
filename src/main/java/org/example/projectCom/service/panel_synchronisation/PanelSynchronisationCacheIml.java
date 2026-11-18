@@ -24,37 +24,39 @@ import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_SYNC
         private final PanelsService panelsService;
         private final CachePanelService cachePanelService;
 
-        @Transactional
-        public Panels save(Long panelId, int divisor, List<String> outputs) {
-            List<OutputOption> selected = OutputUtils.parseSelectedOutputs(outputs);
+    @Transactional
+    public Panels save(Long panelId, int divisor, List<String> outputs) {
+        List<OutputOption> selected = OutputUtils.parseSelectedOutputs(outputs);
 
-            // тип панели проверяем по DTO из кэша — без БД
-            PanelDto panelDto = cachePanelService.getPanelDtoById(panelId);
-            if (panelDto.getNameElement() != PANEL_SYNCHRONIZATION) {
-                throw new IllegalArgumentException("Панель " + panelId + " не является панелью синхронизации");
-            }
-            if (!SyncPeriodOption.isValidDivisor(divisor)) {
-                throw new IllegalArgumentException("Недопустимый период: делитель " + divisor);
-            }
-
-            // свободные = каналы коммутации − занятое другими детьми;
-            // свои выходы в free остаются — синхронизатор может их держать и снимать
-            List<OutputOption> free = cachePanelService.listCheckboxPanelId(
-                    panelDto.getObjectId(), panelId);
-
-            // пустой выбор легален: синхронизатор физически обязателен,
-            // выходы подключаются по мере необходимости
-            panelsService.assertAllowed(selected, new HashSet<>(free),
-                    "Выбраны занятые другими панелями выходы");
-
-            // живая сущность для записи — из БД, это правильный путь
-            Panels panel = panelsService.getPanelById(panelId);
-
-            // запись через кэш-слой: внутри persist вызовется reload
-            return cachePanelService.persist(panel,
-                    OutputUtils.buildSyncPayload(panelDto.getNameElement(), divisor, selected));
+        // тип панели проверяем по DTO из кэша — без БД
+        PanelDto panelDto = cachePanelService.getPanelDtoById(panelId);
+        if (panelDto.getNameElement() != PANEL_SYNCHRONIZATION) {
+            throw new IllegalArgumentException("Панель " + panelId + " не является панелью синхронизации");
+        }
+        if (!SyncPeriodOption.isValidDivisor(divisor)) {
+            throw new IllegalArgumentException("Недопустимый период: делитель " + divisor);
         }
 
+        // свободные = каналы коммутации − занятое другими детьми;
+        // свои выходы в free остаются — синхронизатор может их держать и снимать
+        List<OutputOption> free = cachePanelService.listCheckboxPanelId(
+                panelDto.getObjectId(), panelId);
+
+        // пустой выбор легален: синхронизатор физически обязателен,
+        // выходы подключаются по мере необходимости
+        panelsService.assertAllowed(selected, new HashSet<>(free),
+                "Выбраны занятые другими панелями выходы");
+
+        // живая сущность для записи — из БД, это правильный путь
+        Panels panel = panelsService.getPanelById(panelId);
+
+        // передаём objectId явно, чтобы persist мог сбросить кэш без обращения к panel.getObject()
+        return cachePanelService.persist(
+                panel,
+                OutputUtils.buildSyncPayload(panelDto.getNameElement(), divisor, selected),
+                panelDto.getObjectId()
+        );
+    }
         @Transactional
         public Long delete(Long panelId) {
             // панель из кэша: тип проверяем без БД

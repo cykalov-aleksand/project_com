@@ -70,12 +70,14 @@ import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_OUTP
             // живая сущность для записи — из БД, это правильный путь
             Panels panel = panelsService.getPanelById(panelId);
 
-            // запись через кэш-слой: внутри persist вызовется reload
+
+            // запись через кэш-слой: objectId передаём явно, чтобы не трогать
+            // ленивую связь panel.getObject() после выхода из транзакции
             return cachePanelService.persist(panel,
                     OutputUtils.buildPayload(panelDto.getNameElement(),
-                            OutputUtils.packOutputs(new ArrayList<>(selected), SWITCHING_PAYLOAD_SIZE)));
+                            OutputUtils.packOutputs(new ArrayList<>(selected), SWITCHING_PAYLOAD_SIZE)),
+                    objectId);
         }
-
         @Override
         @Transactional
         public Long delete(Long panelId) {

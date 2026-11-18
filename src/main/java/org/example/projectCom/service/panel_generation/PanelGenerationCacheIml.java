@@ -22,34 +22,35 @@ import java.util.List;
         private final CachePanelService cachePanelService;
         private final PanelsRepository panelsRepository; // останется только для delete, см. ниже
 
-        @Transactional
-        public Panels save(Long panelId, List<String> outputs) {
-            // валидацию типа панели можно провести по DTO из кэша — без БД
-            PanelDto panelDto = cachePanelService.getPanelDtoById(panelId);
-            if (!panelDto.getNameElement().isGeneratorType()) {
-                throw new IllegalArgumentException("Панель не является панелью генератора");
-            }
-
-            List<OutputOption> selected = OutputUtils.parseSelectedOutputs(outputs);
-            List<OutputOption> free = cachePanelService.listCheckboxPanelId(
-                    panelDto.getObjectId(), panelId);
-
-            if (selected.isEmpty() && free.isEmpty()) {
-                throw new NoFreeOutputsException(
-                        "Конфигурация не сохранена: свободных выходов нет — панель осталась ненастроенной. " +
-                                "Освободите канал на другой панели и повторите сохранение");
-            }
-
-            panelsService.assertAllowed(selected, new HashSet<>(free),
-                    "Выбраны занятыми другими панелями выходы");
-
-            // живая сущность для записи — из БД, это правильный путь
-            Panels panel = panelsService.getPanelById(panelId);
-
-            // запись через кэш-слой: внутри persist вызовется reload
-            return cachePanelService.persist(panel,
-                    OutputUtils.buildGeneratorPayload(panelDto.getNameElement(), selected));
+    @Transactional
+    public Panels save(Long panelId, List<String> outputs) {
+        // валидация типа панели — по DTO из кэша, без похода в БД
+        PanelDto panelDto = cachePanelService.getPanelDtoById(panelId);
+        if (!panelDto.getNameElement().isGeneratorType()) {
+            throw new IllegalArgumentException("Панель не является панелью генератора");
         }
+
+        List<OutputOption> selected = OutputUtils.parseSelectedOutputs(outputs);
+        List<OutputOption> free = cachePanelService.listCheckboxPanelId(
+                panelDto.getObjectId(), panelId);
+
+        if (selected.isEmpty() && free.isEmpty()) {
+            throw new NoFreeOutputsException(
+                    "Конфигурация не сохранена: свободных выходов нет — панель осталась ненастроенной. " +
+                            "Освободите канал на другой панели и повторите сохранение");
+        }
+
+        panelsService.assertAllowed(selected, new HashSet<>(free),
+                "Выбраны занятые другими панелями выходы");
+
+        // живая сущность для записи — только из БД
+        Panels panel = panelsService.getPanelById(panelId);
+
+        // objectId передаём явно: persist сбросит кэш по нему, не трогая ленивую связь
+        return cachePanelService.persist(panel,
+                OutputUtils.buildGeneratorPayload(panelDto.getNameElement(), selected),
+                panelDto.getObjectId());
+    }
 
     @Override
     @Transactional
