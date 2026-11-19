@@ -1,9 +1,12 @@
-package org.example.projectCom.cache;
+package org.example.projectCom.service.panelService.cacheServicePanel;
 
 import org.example.projectCom.dto.PanelDto;
 import org.example.projectCom.model.Panels;
 import org.example.projectCom.service.OutputUtils;
-import org.example.projectCom.service.PanelsService;
+import org.example.projectCom.service.panelService.PanelOccupancyLogic;
+import org.example.projectCom.service.panelService.service.PanelsService;
+import org.example.projectCom.service.panelService.myCache.HwCache;
+import org.example.projectCom.service.panelService.myCache.MyCache;
 import org.example.projectCom.setup_controller.OutputOption;
 import org.example.projectCom.setup_controller.PanelNameOption;
 
@@ -14,23 +17,26 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_OUTPUT_SWITCHING;
 import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_SYNCHRONIZATION;
 
 @Component
-public class CachePanelService {
-    private static final Logger logger = LoggerFactory.getLogger(CachePanelService.class);
+public class PanelServiceCache {
+    private static final Logger logger = LoggerFactory.getLogger(PanelServiceCache.class);
 
     private final PanelsService panelsService;
 
     // основной кэш: ключ — objectId, значение — список DTO панелей объекта
     private final HwCache<Long, List<PanelDto>> panelsDtoCache = new MyCache<>();
 
+    // ⚠️ Однопользовательский режим: кэш привязан к одному объекту.
+// Не использовать в многопользовательском сценарии без доработки.
     // текущий объект, на котором «живёт» кэш
     private Long currentObjectId;
 
-    public CachePanelService(PanelsService panelsService) {
+    public PanelServiceCache(PanelsService panelsService) {
         this.panelsService = panelsService;
     }
 
@@ -85,6 +91,8 @@ public class CachePanelService {
                         "Панель " + id + " не найдена в списке объекта " + objectId));
     }
 
+    // ⚠️ Однопользовательский режим: кэш привязан к одному объекту.
+// Не использовать в многопользовательском сценарии без доработки.
     /** Сброс кэша при смене objectId. */
     private void checkAndSwitch(Long objectId) {
         if (currentObjectId == null || !currentObjectId.equals(objectId)) {
@@ -117,7 +125,7 @@ public class CachePanelService {
     // ==================== ПРОИЗВОДНЫЕ ЧТЕНИЯ ====================
 
     /** Доступные для создания типы панелей — из кэша. */
-     public List<PanelNameOption> getAvailablePanelTypes(Long objectId) {
+    public List<PanelNameOption> getAvailablePanelTypes(Long objectId) {
         Set<PanelNameOption> existingTypes = findPanelsIdObject(objectId).stream()
                 .map(PanelDto::getNameElement)
                 .collect(Collectors.toSet());
@@ -130,15 +138,15 @@ public class CachePanelService {
             // Панель коммутации есть, синхронизации нет — можно только её
             return List.of(PANEL_SYNCHRONIZATION);
         }
-        return List.of(PanelNameOption.values()).stream()
+        return Stream.of(PanelNameOption.values())
                 .filter(type -> !existingTypes.contains(type))
                 .toList();
     }
 
 
     /** Проверка наличия панели заданного типа: из кэша. */
-       public boolean existsPanelType(Long objectId, PanelNameOption type) {
-       return findPanelsIdObject(objectId).stream()
+    public boolean existsPanelType(Long objectId, PanelNameOption type) {
+        return findPanelsIdObject(objectId).stream()
                 .map(PanelDto::getNameElement)
                 .anyMatch(type::equals);
     }
@@ -146,26 +154,17 @@ public class CachePanelService {
 
     /** Чтение строки JSON по указанному объекту с заданным типом панели — из кэша. */
     public String getPanelJson(Long objectId, PanelNameOption type) {
-              return findPanelsIdObject(objectId).stream()
-                .filter(p -> p.getNameElement() == type)
+        return findPanelsIdObject(objectId).stream()
+                .filter(p -> p.getNameElement().equals(type))
                 .map(PanelDto::getListCondition)
                 .findFirst()
                 .orElse(null);
     }
 
     /** Список свободных элементов указанной панели по заданному объекту — из кэша. */
-  public List<OutputOption> listCheckboxPanelId(Long objectId, Long excludePanelId) {
-        List<OutputOption> free = OutputUtils.extractSelectedOutputs(
-                getPanelJson(objectId, PANEL_OUTPUT_SWITCHING));
-
-        findPanelsIdObject(objectId).stream()
-                .filter(p -> !p.getId().equals(excludePanelId))          // ← не вычитаем себя
-                .filter(p -> p.getNameElement() != PANEL_OUTPUT_SWITCHING)
-                .map(p -> OutputUtils.extractSelectedOutputs(p.getListCondition(),
-                        OutputUtils.payloadOffset(p.getNameElement())))
-                .flatMap(List::stream)
-                .forEach(free::remove);
-        return free;
+    public List<OutputOption> listCheckboxPanelId(Long objectId, Long excludePanelId) {
+        List<PanelDto> panels = findPanelsIdObject(objectId);
+        return PanelOccupancyLogic.calculateFromDtos(panels, excludePanelId).free();
     }
 
 
@@ -196,32 +195,18 @@ public class CachePanelService {
 
     public Set<OutputOption> takenByOthers(Long idPanel) {
         PanelDto panel = getPanelDtoById(idPanel);
+        List<PanelDto> allPanels = findPanelsIdObject(panel.getObjectId());
+        Set<OutputOption> occupied = PanelOccupancyLogic.calculateFromDtos(allPanels, idPanel).occupied();
 
-        // коммутация: занятость каналов дочерними панелями — без вычитания своих
         if (panel.getNameElement() == PANEL_OUTPUT_SWITCHING) {
-            return findPanelsIdObject(panel.getObjectId()).stream()
-                    .filter(p -> !p.getId().equals(idPanel))
-                    .filter(p -> p.getNameElement() != PANEL_OUTPUT_SWITCHING)
-                    .map(p -> OutputUtils.extractSelectedOutputs(p.getListCondition(),
-                            OutputUtils.payloadOffset(p.getNameElement())))
-                    .flatMap(List::stream)
-                    .collect(Collectors.toSet());
+            return occupied;
         }
 
-        // дочерние панели: своё не блокируем
         int offset = OutputUtils.payloadOffset(panel.getNameElement());
         Set<OutputOption> mine = new HashSet<>(
                 OutputUtils.extractSelectedOutputs(panel.getListCondition(), offset));
-        Set<OutputOption> taken = new HashSet<>();
-        findPanelsIdObject(panel.getObjectId()).stream()
-                .filter(p -> !p.getId().equals(idPanel))
-                .filter(p -> p.getNameElement() != PANEL_OUTPUT_SWITCHING)
-                .map(p -> OutputUtils.extractSelectedOutputs(p.getListCondition(),
-                        OutputUtils.payloadOffset(p.getNameElement())))
-                .flatMap(List::stream)
-                .forEach(taken::add);
-        taken.removeAll(mine);
-        return taken;
+        occupied.removeAll(mine);
+        return occupied;
     }
 
 
@@ -258,4 +243,4 @@ public class CachePanelService {
         logger.info("кэш сброшен после удаления панели {}", panelId);
         return objectId;
     }
-    }
+}

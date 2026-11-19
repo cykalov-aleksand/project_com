@@ -1,31 +1,31 @@
-package org.example.projectCom.cache;
+package org.example.projectCom.service.panelService.myCache;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.WeakHashMap;
+import java.util.*;
 
 public class MyCache<K, V> implements HwCache<K, V> {
     private static final Logger logger = LoggerFactory.getLogger(MyCache.class);
 
-    private final WeakHashMap<K, V> cache = new WeakHashMap<>();
-    private final List<HwListener<K, V>> listeners = new ArrayList<>();
+    // Collections.synchronizedMap делает все операции потокобезопасными
+    private final Map<K, V> cache = Collections.synchronizedMap(new HashMap<>());
+    private final List<HwListener<K, V>> listeners = Collections.synchronizedList(new ArrayList<>());
 
     @Override
-    public synchronized void put(K key, V value) {
+    public void put(K key, V value) {
         cache.put(key, value);
         notifyListeners(key, value, "put");
     }
 
     @Override
-    public synchronized void remove(K key) {
+    public void remove(K key) {
         V value = cache.remove(key);
         notifyListeners(key, value, "remove");
     }
+
     @Override
-       public synchronized V get(K key) {
+    public V get(K key) {
         V value = cache.get(key);
         if (value != null) {
             notifyListeners(key, value, "get");
@@ -34,20 +34,21 @@ public class MyCache<K, V> implements HwCache<K, V> {
     }
 
     @Override
-    public synchronized void addListener(HwListener<K, V> listener) {
+    public void addListener(HwListener<K, V> listener) {
         if (listener != null && !listeners.contains(listener)) {
             listeners.add(listener);
         }
     }
 
     @Override
-    public synchronized void removeListener(HwListener<K, V> listener) {
+    public void removeListener(HwListener<K, V> listener) {
         listeners.remove(listener);
     }
 
     private void notifyListeners(K key, V value, String action) {
+        // Теперь можно безопасно копировать список, не блокируя дополнительно
         List<HwListener<K, V>> copy;
-        synchronized (this) {
+        synchronized (listeners) {
             copy = new ArrayList<>(listeners);
         }
 

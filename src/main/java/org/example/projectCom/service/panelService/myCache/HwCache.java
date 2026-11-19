@@ -1,4 +1,4 @@
-package org.example.projectCom.cache;
+package org.example.projectCom.service.panelService.myCache;
 
 public interface HwCache<K, V> {
 

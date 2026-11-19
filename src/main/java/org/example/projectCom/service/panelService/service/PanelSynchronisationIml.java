@@ -1,10 +1,10 @@
-package org.example.projectCom.service.panel_synchronisation;
+package org.example.projectCom.service.panelService.service;
 
 import org.example.projectCom.model.Panels;
 import org.example.projectCom.repository.PanelsRepository;
 import org.example.projectCom.service.OutputUtils;
 import org.example.projectCom.service.errors.PanelValidationException;
-import org.example.projectCom.service.PanelsService;
+import org.example.projectCom.service.panelService.PanelSynchronisation;
 import org.example.projectCom.setup_controller.OutputOption;
 import org.example.projectCom.setup_controller.SyncPeriodOption;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_SYNC
 
 @Service
 @RequiredArgsConstructor
-public class PanelSynchronisationIml implements PanelSynchronisation{
+public class PanelSynchronisationIml implements PanelSynchronisation {
     private final PanelsService panelsService;
     private final PanelsRepository panelsRepository;
     @Transactional

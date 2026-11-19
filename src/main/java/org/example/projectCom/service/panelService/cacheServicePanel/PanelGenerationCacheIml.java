@@ -1,13 +1,12 @@
-package org.example.projectCom.service.panel_generation;
+package org.example.projectCom.service.panelService.cacheServicePanel;
 
 import lombok.RequiredArgsConstructor;
-import org.example.projectCom.cache.CachePanelService;
 import org.example.projectCom.dto.PanelDto;
 import org.example.projectCom.model.Panels;
-import org.example.projectCom.repository.PanelsRepository;
 import org.example.projectCom.service.OutputUtils;
-import org.example.projectCom.service.PanelsService;
+import org.example.projectCom.service.panelService.service.PanelsService;
 import org.example.projectCom.service.errors.NoFreeOutputsException;
+import org.example.projectCom.service.panelService.PanelGeneration;
 import org.example.projectCom.setup_controller.OutputOption;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,7 @@ import java.util.List;
     @RequiredArgsConstructor
     public class PanelGenerationCacheIml implements PanelGeneration {
         private final PanelsService panelsService;
-        private final CachePanelService cachePanelService;
+        private final PanelServiceCache cachePanelService;
 
     @Transactional
     public Panels save(Long panelId, List<String> outputs) {

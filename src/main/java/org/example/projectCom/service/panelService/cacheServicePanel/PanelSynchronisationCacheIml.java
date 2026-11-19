@@ -1,12 +1,12 @@
-package org.example.projectCom.service.panel_synchronisation;
+package org.example.projectCom.service.panelService.cacheServicePanel;
 
 import lombok.RequiredArgsConstructor;
-import org.example.projectCom.cache.CachePanelService;
 import org.example.projectCom.dto.PanelDto;
 import org.example.projectCom.model.Panels;
 import org.example.projectCom.service.OutputUtils;
-import org.example.projectCom.service.PanelsService;
+import org.example.projectCom.service.panelService.service.PanelsService;
 import org.example.projectCom.service.errors.PanelValidationException;
+import org.example.projectCom.service.panelService.PanelSynchronisation;
 import org.example.projectCom.setup_controller.OutputOption;
 import org.example.projectCom.setup_controller.SyncPeriodOption;
 import org.springframework.context.annotation.Primary;
@@ -24,7 +24,7 @@ import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_SYNC
     @RequiredArgsConstructor
     public class PanelSynchronisationCacheIml implements PanelSynchronisation {
         private final PanelsService panelsService;
-        private final CachePanelService cachePanelService;
+        private final PanelServiceCache cachePanelService;
     @Override
     @Transactional
     public Panels save(Long panelId, int divisor, List<String> outputs) {

@@ -1,15 +1,15 @@
 package org.example.projectCom.controller;
 
 
-import org.example.projectCom.cache.CachePanelService;
+import org.example.projectCom.service.panelService.cacheServicePanel.PanelServiceCache;
 import org.example.projectCom.dto.PanelDto;
 import org.example.projectCom.model.Panels;
 import org.example.projectCom.service.*;
 import org.example.projectCom.service.errors.NoFreeOutputsException;
 import org.example.projectCom.service.errors.PanelValidationException;
-import org.example.projectCom.service.panel_generation.PanelGeneration;
-import org.example.projectCom.service.panel_output_switch.PanelOutputSwitch;
-import org.example.projectCom.service.panel_synchronisation.PanelSynchronisation;
+import org.example.projectCom.service.panelService.PanelGeneration;
+import org.example.projectCom.service.panelService.PanelOutputSwitch;
+import org.example.projectCom.service.panelService.PanelSynchronisation;
 import org.example.projectCom.setup_controller.OutputOption;
 import org.example.projectCom.setup_controller.PanelNameOption;
 import org.example.projectCom.setup_controller.SyncPeriodOption;
@@ -32,7 +32,7 @@ import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_SYNC
 @RequiredArgsConstructor
 public class ControllerPanels {
     // private final PanelsService panelsService;
-    private final CachePanelService cachePanelService;
+    private final PanelServiceCache cachePanelService;
     private final ObjectService objectService;
     private final PanelGeneration panelGenerationIml;
     private final PanelSynchronisation panelSynchronisationIml;
