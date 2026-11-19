@@ -1,6 +1,5 @@
 package org.example.projectCom.controller;
 
-
 import org.example.projectCom.service.panelService.cacheServicePanel.PanelServiceCache;
 import org.example.projectCom.dto.PanelDto;
 import org.example.projectCom.model.Panels;
@@ -34,14 +33,14 @@ public class ControllerPanels {
     // private final PanelsService panelsService;
     private final PanelServiceCache cachePanelService;
     private final ObjectService objectService;
-    private final PanelGeneration panelGenerationIml;
-    private final PanelSynchronisation panelSynchronisationIml;
-    private final PanelOutputSwitch panelOutputSwitchIml;
+    private final PanelGeneration panelGeneration;
+    private final PanelSynchronisation panelSynchronisation;
+    private final PanelOutputSwitch panelOutputSwitch;
 
     @GetMapping("/panels/edit/{id}/{name}")
     public String showEditPanelsNameObject(@PathVariable Long id, @PathVariable String name,
                                            Model model) {
-        List<PanelDto> panels=cachePanelService.findPanelsIdObject(id);
+        List<PanelDto> panels = cachePanelService.findPanelsIdObject(id);
         //List<PanelDto> panels = panelsService.findPanelsIdObject(id);
         model.addAttribute("availableNames", PanelNameOption.values());
         model.addAttribute("panels", panels);
@@ -52,9 +51,15 @@ public class ControllerPanels {
 
     @PostMapping("/panels/save")
     public String savePanel(@RequestParam Long objectId,
-                            @RequestParam PanelNameOption panelNameOption) {
-        Panels panel = cachePanelService.createPanel(objectId, panelNameOption);
-        return "redirect:/panels/" + panel.getId();
+                            @RequestParam PanelNameOption panelNameOption,
+                            RedirectAttributes redirectAttributes) {
+        try {
+            Panels panel = cachePanelService.createPanel(objectId, panelNameOption);
+            return "redirect:/panels/" + panel.getId();
+        } catch (IllegalArgumentException | EntityNotFoundException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return redirectToEdit(objectId);
+        }
     }
 
     @GetMapping("/panels/create")
@@ -70,21 +75,21 @@ public class ControllerPanels {
     public String deleteCell(@PathVariable Long id,
                              RedirectAttributes redirectAttributes) {
         PanelDto panel;
-        try{
-            panel=cachePanelService.getPanelDtoById(id);
-        } catch (EntityNotFoundException e) {
+        try {
+            panel = cachePanelService.getPanelDtoById(id);
+        } catch (EntityNotFoundException | IllegalStateException e) {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Панель не найдена (возможно, уже удалена)");
             return "redirect:/";
         }
-        Long objectId=panel.getObjectId();
-        try{
+        Long objectId = panel.getObjectId();
+        try {
             if (panel.getNameElement().isGeneratorType()) {
-                objectId = panelGenerationIml.delete(id);
+                objectId = panelGeneration.delete(id);
             } else if (panel.getNameElement() == PANEL_SYNCHRONIZATION) {
-                objectId = panelSynchronisationIml.delete(id);
+                objectId = panelSynchronisation.delete(id);
             } else {
-                objectId = panelOutputSwitchIml.delete(id);
+                objectId = panelOutputSwitch.delete(id);
             }
             redirectAttributes.addFlashAttribute("successMessage", "Панель удалена");
             return redirectToEdit(objectId);
@@ -129,7 +134,7 @@ public class ControllerPanels {
                              @RequestParam(required = false) List<String> outputs,
                              RedirectAttributes redirectAttributes) {
         try {
-            panelOutputSwitchIml.save(panelId, objectId, outputs);
+            panelOutputSwitch.save(panelId, objectId, outputs);
             redirectAttributes.addFlashAttribute("successMessage",
                     "Шаг настройки выходов пройден");
         } catch (PanelValidationException | IllegalArgumentException | EntityNotFoundException e) {
@@ -146,7 +151,7 @@ public class ControllerPanels {
                            @RequestParam(required = false) List<String> outputs,
                            RedirectAttributes redirectAttributes) {
         try {
-            panelSynchronisationIml.save(panelId, period, outputs);
+            panelSynchronisation.save(panelId, period, outputs);
             redirectAttributes.addFlashAttribute("successMessage",
                     "Панель синхронизации настроена");
         } catch (IllegalArgumentException | EntityNotFoundException e) {
@@ -162,7 +167,7 @@ public class ControllerPanels {
                                 @RequestParam(required = false) List<String> outputs,
                                 RedirectAttributes redirectAttributes) {
         try {
-            panelGenerationIml.save(panelId, outputs);
+            panelGeneration.save(panelId, outputs);
             redirectAttributes.addFlashAttribute("successMessage",
                     "Панель генератора настроена");
         } catch (NoFreeOutputsException | IllegalArgumentException | EntityNotFoundException e) {
@@ -176,7 +181,7 @@ public class ControllerPanels {
     public String showEditPanel(@PathVariable Long panelId, Model model) {
         PanelDto panel = cachePanelService.getPanelDtoById(panelId);
         List<OutputOption> selected = OutputUtils.extractSelectedOutputs(
-                panel.getListCondition(),OutputUtils.payloadOffset(panel.getNameElement()));
+                panel.getListCondition(), OutputUtils.payloadOffset(panel.getNameElement()));
         model.addAttribute("pageTitle", "Редактирование панели: "
                 + panel.getNameElement().getDisplayName() + " c ID=" + panelId);
         model.addAttribute("panel", panel);
@@ -196,6 +201,7 @@ public class ControllerPanels {
         String encodedName = UriUtils.encodePath(objectName, StandardCharsets.UTF_8);
         return "redirect:/panels/edit/" + objectId + "/" + encodedName;
     }
+
     @PostMapping("/panels/{panelId}/edit/save")
     public String savePanelEdit(@PathVariable Long panelId,
                                 @RequestParam(required = false) Integer period,
@@ -205,15 +211,18 @@ public class ControllerPanels {
         Long objectId = panel.getObjectId();
         try {
             switch (panel.getNameElement()) {
-                case PANEL_OUTPUT_SWITCHING ->
-                        panelOutputSwitchIml.save(panelId, objectId, outputs);
-                case PANEL_SYNCHRONIZATION ->
-                        panelSynchronisationIml.save(panelId, period, outputs);
-                default ->
-                        panelGenerationIml.save(panelId, outputs);
+                case PANEL_OUTPUT_SWITCHING -> panelOutputSwitch.save(panelId, objectId, outputs);
+                case PANEL_SYNCHRONIZATION -> {
+                    if (period == null) {
+                        throw new IllegalArgumentException("Не указан период синхронизации");
+                    }
+                    panelSynchronisation.save(panelId, period, outputs);
+                }
+                default -> panelGeneration.save(panelId, outputs);
             }
             redirectAttributes.addFlashAttribute("successMessage", "Настройки панели обновлены");
-        } catch (PanelValidationException | IllegalArgumentException | EntityNotFoundException e) {
+        } catch (IllegalStateException | PanelValidationException | IllegalArgumentException |
+                 EntityNotFoundException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return redirectToEdit(objectId);

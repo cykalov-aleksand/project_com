@@ -15,13 +15,21 @@ public class SerialWorker {
                 return t;
             });
 
-    public CompletableFuture<byte[]> sendAndAwait(SerialPort port,
-                                                  byte[] payload,
-                                                  Duration timeout) {
+    public CompletableFuture<byte[]> sendAndAwait(SerialPort port, byte[] payload,
+                                                  Duration timeout, int responseLength) {
         return CompletableFuture.supplyAsync(() -> {
-            port.writeBytes(payload, payload.length);
-            byte[] buf = new byte[6];
-            port.readBytes(buf, 6); // вернёт -1 при таймауте
+            int written = port.writeBytes(payload, payload.length);
+            if (written != payload.length) {
+                throw new org.example.projectCom.service.errors.SerialPortException(
+                        "Записано " + written + " из " + payload.length + " байт");
+            }
+            byte[] buf = new byte[responseLength];
+            int read = port.readBytes(buf, buf.length);
+            if (read < buf.length) {
+                throw new org.example.projectCom.service.errors.SerialPortException(
+                        "Прочитано " + read + " из " + responseLength + " байт" +
+                                (read == -1 ? " (таймаут)" : ""));
+            }
             return buf;
         }, executor);
     }
