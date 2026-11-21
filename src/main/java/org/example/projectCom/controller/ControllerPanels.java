@@ -1,5 +1,6 @@
 package org.example.projectCom.controller;
 
+import org.example.projectCom.port.PortService;
 import org.example.projectCom.service.panelService.cacheServicePanel.PanelServiceCache;
 import org.example.projectCom.dto.PanelDto;
 import org.example.projectCom.model.Panels;
@@ -36,10 +37,14 @@ public class ControllerPanels {
     private final PanelGeneration panelGeneration;
     private final PanelSynchronisation panelSynchronisation;
     private final PanelOutputSwitch panelOutputSwitch;
+    private final PortService portService;
 
     @GetMapping("/panels/edit/{id}/{name}")
     public String showEditPanelsNameObject(@PathVariable Long id, @PathVariable String name,
                                            Model model) {
+
+
+
         List<PanelDto> panels = cachePanelService.findPanelsIdObject(id);
         //List<PanelDto> panels = panelsService.findPanelsIdObject(id);
         model.addAttribute("availableNames", PanelNameOption.values());
@@ -167,7 +172,15 @@ public class ControllerPanels {
                                 @RequestParam(required = false) List<String> outputs,
                                 RedirectAttributes redirectAttributes) {
         try {
-            panelGeneration.save(panelId, outputs);
+            // LoggingSerialSender loggingSerialSender=new LoggingSerialSender();
+            Panels savedPanel = panelGeneration.save(panelId, outputs);
+
+            // Из свежей панели берём hex-строку и превращаем в байты
+            byte[] payload = OutputUtils.fromJsonbHex(savedPanel.getOutputsJsonString());
+
+            // Отправляем в порт (пока через заглушку)
+            //loggingSerialSender.send(payload);
+            portService.writePanelAsync(panelId, payload);
             redirectAttributes.addFlashAttribute("successMessage",
                     "Панель генератора настроена");
         } catch (NoFreeOutputsException | IllegalArgumentException | EntityNotFoundException e) {
@@ -185,6 +198,9 @@ public class ControllerPanels {
         model.addAttribute("pageTitle", "Редактирование панели: "
                 + panel.getNameElement().getDisplayName() + " c ID=" + panelId);
         model.addAttribute("panel", panel);
+        String status = portService.getStatus(panelId);
+        System.err.println(status);
+        model.addAttribute("portStatus", status);
         model.addAttribute("objectId", panel.getObjectId());
         model.addAttribute("outputGroups", cachePanelService.buildOutputGrid(panelId));
         model.addAttribute("selected", selected);

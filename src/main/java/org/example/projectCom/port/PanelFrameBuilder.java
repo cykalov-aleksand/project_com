@@ -33,6 +33,7 @@ public class PanelFrameBuilder {
 
     /** Ожидаемая длина ответа на запись (только эхо). */
     public int writeResponseLength() {
+
         return 6;
     }
     /** Эхо-блок для проверки — первые 6 байт кадра (ключ + заголовок). */

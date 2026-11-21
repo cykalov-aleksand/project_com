@@ -9,6 +9,14 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+import com.fazecast.jSerialComm.SerialPort;
+import org.example.projectCom.configuration.SerialPortProperties;
+import org.example.projectCom.service.errors.SerialPortException;
+import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 @Component
 public class SerialPortService {
 

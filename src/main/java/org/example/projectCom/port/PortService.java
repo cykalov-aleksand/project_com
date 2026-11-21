@@ -2,39 +2,30 @@ package org.example.projectCom.port;
 
 import com.fazecast.jSerialComm.SerialPort;
 import lombok.RequiredArgsConstructor;
-import org.example.projectCom.dto.PanelDto;
 import org.example.projectCom.service.SerialPortService;
 import org.example.projectCom.service.SerialWorker;
-import org.example.projectCom.service.panelService.cacheServicePanel.PanelServiceCache;
+import org.example.projectCom.service.errors.SerialPortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 @Service
 @RequiredArgsConstructor
 public class PortService {
-    private final static Logger logger= LoggerFactory.getLogger(PortService.class);
-
-    private static final int HEADER_LEN = 6;          // эхо-блок
-    private static final int MAX_ATTEMPTS = 3;        // 1 попытка + 2 повтора
+    private static final Logger log = LoggerFactory.getLogger(PortService.class);
+    private static final int MAX_ATTEMPTS = 3;
     private static final Duration PER_EXCHANGE_TIMEOUT = Duration.ofSeconds(5);
 
     private final SerialPortService portService;
     private final SerialWorker worker;
     private final PanelFrameBuilder frames;
-    private final PanelServiceCache cachePanelService;
 
-    // один поток — запросы не перемешаются в порту, очередь выстроит их сама
+    // Один поток на все отправки — пакеты не перемешаются в линии
     private final ExecutorService executor =
             Executors.newSingleThreadExecutor(r -> {
                 Thread t = new Thread(r, "panel-exchange");
@@ -42,84 +33,51 @@ public class PortService {
                 return t;
             });
 
-    // последняя мапа результатов — для polling'а из UI, если понадобится
-    private final Map<Long, PanelExchangeResult> lastResults = new LinkedHashMap<>();
+    // Твоя мапа: панель -> понятный статус
+    private final Map<Long, String> lastStatus = new ConcurrentHashMap<>();
 
-    // ==================== ЧТЕНИЕ ====================
-
-    /** Чтение JSON одной панели: 1 попытка + 2 повтора, результат в мапу. */
-    public CompletableFuture<PanelExchangeResult> readPanelJsonAsync(Long panelId) {
-        return CompletableFuture.supplyAsync(() -> {
-            PanelDto panel = cachePanelService.getPanelDtoById(panelId);
-            PanelExchangeResult result = exchange(panel.getId(),
-                    frames.buildRead(panel.getId()),
-                    frames.readResponseLength());
-            store(panel.getId(), result);
-            return result;
-        }, executor);
-    }
-
-    /** Чтение JSON всех панелей, где он не пустой. Асинхронно, мапа панель → результат. */
-    public CompletableFuture<Map<Long, PanelExchangeResult>> readAllJsonAsync(Long objectId) {
-        return CompletableFuture.supplyAsync(() -> {
-            Map<Long, PanelExchangeResult> results = new LinkedHashMap<>();
-            List<PanelDto> panels = cachePanelService.findPanelsIdObject(objectId).stream()
-                    .filter(p -> p.getListCondition() != null && !p.getListCondition().isBlank())
-                    .toList();
-
-            for (PanelDto panel : panels) {
-                // «нет ответа → 2 повтора → к следующей панели» — внутри exchange
-                PanelExchangeResult result = exchange(panel.getId(),
-                        frames.buildRead(panel.getId()),
-                        frames.readResponseLength());
-                results.put(panel.getId(), result);
-                store(panel.getId(), result);
-            }
-            return results;
-        }, executor);
-    }
-
-    // ==================== ЗАПИСЬ ====================
-
-    /** Запись payload в панель с проверкой эхо первых 6 байт. */
     public CompletableFuture<PanelExchangeResult> writePanelAsync(Long panelId, byte[] payload) {
         return CompletableFuture.supplyAsync(() -> {
             byte[] request = frames.buildWrite(payload);
             PanelExchangeResult result = exchange(panelId, request, frames.writeResponseLength());
-            store(panelId, result);
+
+            // Пишем понятный статус в мапу
+            String statusText;
+            switch (result.status()) {
+                case DELIVERED -> statusText = "Передано (эхо совпало)";
+                case NO_RESPONSE -> statusText = "Не передано (нет ответа)";
+                case ECHO_MISMATCH -> statusText = "Не передано (эхо не совпало)";
+                case PORT_CLOSED -> statusText = "Не передано (порт закрыт)";
+                default -> statusText = "Не передано (неизвестная ошибка)";
+            }
+            lastStatus.put(panelId, statusText);
+
             return result;
         }, executor);
     }
 
-    // ==================== ЯДРО ОБМЕНА ====================
-
-    /**
-     * Один обмен: до MAX_ATTEMPTS попыток. Совпало эхо — DELIVERED,
-     * исчерпали попытки — NO_RESPONSE/ECHO_MISMATCH. Исключения не летят наружу.
-     */
     private PanelExchangeResult exchange(Long panelId, byte[] request, int responseLength) {
         SerialPort port;
         try {
             port = portService.port();
-        } catch (org.example.projectCom.service.errors.SerialPortException e) {
+        } catch (SerialPortException e) {
             return PanelExchangeResult.failure(panelId, ExchangeStatus.PORT_CLOSED, request, e.getMessage());
         }
 
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
-                byte[] response = worker.sendAndAwait(port, request,
-                                PER_EXCHANGE_TIMEOUT, responseLength)
-                        .get(PER_EXCHANGE_TIMEOUT.toSeconds() + 1, TimeUnit.SECONDS);
+                byte[] response = worker.sendAndAwait(port, request, PER_EXCHANGE_TIMEOUT, responseLength);
 
                 if (echoMatches(request, response)) {
-                    logger.info("панель {}: доставка подтверждена (попытка {})", panelId, attempt);
+                    log.info("Панель {}: доставка подтверждена (попытка {})", panelId, attempt);
                     return PanelExchangeResult.delivered(panelId, request, response);
                 }
-                logger.warn("панель {}: эхо не совпало (попытка {})", panelId, attempt);
+                log.warn("Панель {}: эхо не совпало (попытка {})", panelId, attempt);
 
             } catch (Exception e) {
-                // таймаут, недочёт байтов, прерывание — всё трактуем как «ответа нет»
-                logger.warn("панель {}: ответа нет (попытка {}): {}", panelId, attempt, e.getMessage());
+                log.warn("Панель {}: нет ответа (попытка {}): {}", panelId, attempt, e.getMessage());
+                // Небольшая пауза перед повтором, чтобы не спамить линию
+                try { Thread.sleep(200); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
             }
         }
 
@@ -127,25 +85,15 @@ public class PortService {
                 "Ответ не получен за " + MAX_ATTEMPTS + " попыток");
     }
 
-    /** Первые 6 байт запроса должны быть равны первым 6 байтам ответа. */
     private boolean echoMatches(byte[] request, byte[] response) {
-        if (response == null || response.length < HEADER_LEN || request.length < HEADER_LEN) {
-            return false;
-        }
+        if (response == null || response.length < 6 || request.length < 6) return false;
         return Arrays.equals(
-                Arrays.copyOfRange(request, 0, HEADER_LEN),
-                Arrays.copyOfRange(response, 0, HEADER_LEN));
+                Arrays.copyOfRange(request, 0, 6),
+                Arrays.copyOfRange(response, 0, 6));
     }
 
-    private void store(Long panelId, PanelExchangeResult result) {
-        synchronized (lastResults) {
-            lastResults.put(panelId, result);
-        }
-    }
-
-    public synchronized Map<Long, PanelExchangeResult> snapshotResults() {
-        synchronized (lastResults) {
-            return new LinkedHashMap<>(lastResults);
-        }
+    // Простой метод для контроллера: получить статус по ID панели
+    public String getStatus(Long panelId) {
+        return lastStatus.getOrDefault(panelId, "Ожидание");
     }
 }

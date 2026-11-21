@@ -14,3 +14,4 @@ public record PanelExchangeResult(
         return new PanelExchangeResult(panelId, status, req, null, msg);
     }
 }
+
