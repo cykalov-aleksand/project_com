@@ -224,7 +224,7 @@ public class PanelServiceCache {
         }
         if (panelNameOption == PANEL_SYNCHRONIZATION) {
             return OutputUtils.buildFixedGrid(
-                    OutputUtils.extractSelectedOutputs(getPanelJson(objectId, PANEL_OUTPUT_SWITCHING)));
+                    OutputUtils.extractSelectedOutputs(getPanelJson(objectId, PANEL_OUTPUT_SWITCHING),PANEL_OUTPUT_SWITCHING));
         }
         return OutputUtils.buildFixedGrid(listCheckboxPanelId(objectId, panelId));
     }

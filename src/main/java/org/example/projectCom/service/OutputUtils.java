@@ -8,8 +8,6 @@ import org.example.projectCom.setup_controller.PanelNameOption;
 
 import java.util.*;
 
-import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_OUTPUT_SWITCHING;
-
 /**
  * Утилитный класс для упаковки/распаковки конфигураций панелей.
 
@@ -137,13 +135,6 @@ public final class OutputUtils {
     }
 
     /**
-     * Чтение масок для панели коммутации — маски начинаются с байта 1.
-     */
-    public static List<OutputOption> extractSelectedOutputs(String jsonbHex) {
-        return extractSelectedOutputs(jsonbHex, 1);
-    }
-
-    /**
      * Читает делитель периода синхронизации из байтов 1–2 (big-endian).
      * Пример: "020064..." → байты 00 64 → 100 → период «10 мс».
      * Возвращает 0, если конфигурации нет или пакет короче ожидаемого.
@@ -156,16 +147,6 @@ public final class OutputUtils {
         if (payload.length < offset + 2) return 0;
         return (payload[offset] & 0xFF) | ((payload[offset + 1] & 0xFF) << 8);
     }
-    /*
-    public static int extractDivisor(String json) {
-        MessageStructure s = PanelStructure.SYNCHRONIZATION.structure();
-        byte[] payload = fromJsonbHex(json);
-        int offset = s.offsetOf("divisor");
-        if (payload == null || payload.length < offset + 2) return 0;
-        return (payload[offset] & 0xFF) | ((payload[offset + 1] & 0xFF) << 8); // little-endian
-    }
-
-     */
 
     /**
      * Собирает пакет конфигурации синхронизации:
@@ -180,38 +161,14 @@ public final class OutputUtils {
                 .putUInt16("divisor", divisor)
                 .build();
     }
-    /*
-    public static byte[] buildSyncPayload(PanelNameOption panelKey, int divisor,
-                                          List<OutputOption> selected) {
-        byte[] payload = new byte[8];
-        payload[0] = panelKey.getKeyCode();
-        payload[1] = (byte) ((divisor >> 8) & 0xFF);
-        payload[2] = (byte) (divisor & 0xFF);
-        byte[] mask = packOutputs(selected, 5);
-        System.arraycopy(mask, 0, payload, 3, 5);
-        return payload;
-    }
 
-     */
     public static byte[] buildGeneratorPayload(PanelNameOption type, List<OutputOption> selected) {
         return new PayloadBuffer(PanelStructure.GENERATOR.structure())
                 .putKey(type.getKeyCode())
                 .putOutputs(selected)
                 .build();
     }
-    /*
-    public static byte[] buildGeneratorPayload(PanelNameOption type, List<OutputOption> selected) {
-        byte[] masks = packOutputs(selected, 5);        // как в buildSyncPayload
 
-        byte[] payload = new byte[8];                   // тот же размер, что у синхронизации
-        payload[0] = type.getKeyCode();
-        payload[1] = 0x00;                              // резерв: в синхронизации старший байт делителя
-        payload[2] = 0x00;                              // резерв: в синхронизации младший байт делителя
-        System.arraycopy(masks, 0, payload, 3, masks.length);
-        return payload;
-    }
-
-     */
     public static List<OutputOption> parseSelectedOutputs(List<String> outputs) {
         if (outputs == null || outputs.isEmpty()) {
             return List.of();
@@ -222,11 +179,12 @@ public final class OutputUtils {
                 .map(OutputOption::valueOf)
                 .toList();
     }
-   // public static int payloadOffset(PanelNameOption type) {
-   //     return type == PANEL_OUTPUT_SWITCHING ? 1 : 3;
-   // }
+
     public static int payloadOffset(PanelNameOption type) {
         return PanelStructure.of(type).structure().offsetOf("outputs");
+    }
+    public static List<OutputOption> extractSelectedOutputs(String jsonbHex, PanelNameOption type) {
+        return extractSelectedOutputs(jsonbHex, payloadOffset(type));
     }
 
 }

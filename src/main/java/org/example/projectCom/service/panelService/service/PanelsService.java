@@ -92,7 +92,9 @@ public class PanelsService {
             return outputGroups;
         }
         if (PANEL_SYNCHRONIZATION == panelNameOption) {
-            return OutputUtils.buildFixedGrid(OutputUtils.extractSelectedOutputs(getPanelJson(objectId, PANEL_OUTPUT_SWITCHING)));
+            return OutputUtils.buildFixedGrid(OutputUtils.extractSelectedOutputs(
+                    getPanelJson(objectId, PANEL_OUTPUT_SWITCHING),
+                    PANEL_OUTPUT_SWITCHING));
         }
         return OutputUtils.buildFixedGrid(listCheckboxPanelId(objectId, panelId));
     }

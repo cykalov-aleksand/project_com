@@ -55,7 +55,7 @@ import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_OUTP
             // защита сохраняется: если снятое всё же пересекается с занятым,
             // значит, пришёл некорректный запрос — но через обычный флоу это недостижимо
             Set<OutputOption> removed = new HashSet<>(
-                    OutputUtils.extractSelectedOutputs(panelDto.getListCondition()));
+                    OutputUtils.extractSelectedOutputs(panelDto.getListCondition(),OutputUtils.payloadOffset(panelDto.getNameElement())));
             removed.removeAll(selected);
 
             if (!removed.isEmpty()) {

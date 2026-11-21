@@ -50,7 +50,7 @@ public class PanelOutputSwitchIml implements PanelOutputSwitch {
 // защита сохраняется: если снятое всё же пересекается с занятым,
 // значит, пришёл некорректный запрос — но через обычный флоу это недостижимо
         Set<OutputOption> removed = new HashSet<>(
-                OutputUtils.extractSelectedOutputs(panel.getOutputsJsonString()));
+                OutputUtils.extractSelectedOutputs(panel.getOutputsJsonString(),OutputUtils.payloadOffset(panel.getNameElement())));
         removed.removeAll(selected);
 
         if (!removed.isEmpty()) {
