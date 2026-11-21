@@ -1,12 +1,13 @@
 package org.example.projectCom.service;
 
 import com.fazecast.jSerialComm.SerialPort;
+import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
+@Service
 public class SerialWorker {
     private final ExecutorService executor =
             Executors.newSingleThreadExecutor(r -> {
