@@ -1,5 +1,6 @@
 package org.example.projectCom.controller;
 
+import org.example.projectCom.dto.PanelTestResult;
 import org.example.projectCom.port.PortService;
 import org.example.projectCom.service.panelService.cacheServicePanel.PanelServiceCache;
 import org.example.projectCom.dto.PanelDto;
@@ -38,6 +39,7 @@ public class ControllerPanels {
     private final PanelSynchronisation panelSynchronisation;
     private final PanelOutputSwitch panelOutputSwitch;
     private final PortService portService;
+    private final PanelTestService panelTestService;
 
     @GetMapping("/panels/edit/{id}/{name}")
     public String showEditPanelsNameObject(@PathVariable Long id, @PathVariable String name,
@@ -51,6 +53,10 @@ public class ControllerPanels {
         model.addAttribute("panels", panels);
         model.addAttribute("objectName", name);
         model.addAttribute("objectId", id);
+
+        if (!model.containsAttribute("testResults")) {   // flash уже есть — не трогаем
+            model.addAttribute("testResults", java.util.Map.of());
+        }
         return "edit-panels";
     }
 
@@ -240,6 +246,26 @@ public class ControllerPanels {
         } catch (IllegalStateException | PanelValidationException | IllegalArgumentException |
                  EntityNotFoundException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return redirectToEdit(objectId);
+    }
+    @PostMapping("/panels/test/{id}")
+    public String runPanelTest(@PathVariable Long id,
+                               @RequestParam Long objectId,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            PanelDto panel = cachePanelService.getPanelDtoById(id);
+            if (panel.getListCondition() == null || panel.getListCondition().isBlank()) {
+                redirectAttributes.addFlashAttribute("testResults",
+                        java.util.Map.of(id, PanelTestResult.fail("Панель не настроена")));
+                return redirectToEdit(objectId);
+            }
+            byte[] payload = OutputUtils.fromJsonbHex(panel.getListCondition());
+            PanelTestResult result = panelTestService.runTest(id, payload);
+            redirectAttributes.addFlashAttribute("testResults", java.util.Map.of(id, result));
+        } catch (EntityNotFoundException | IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("testResults",
+                    java.util.Map.of(id, PanelTestResult.fail("Ошибка: " + e.getMessage())));
         }
         return redirectToEdit(objectId);
     }
