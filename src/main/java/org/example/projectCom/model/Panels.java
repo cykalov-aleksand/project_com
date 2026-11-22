@@ -1,10 +1,10 @@
 package org.example.projectCom.model;
 
-import org.example.projectCom.setup_controller.PanelNameOption;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.projectCom.dto.enum_panels.PanelNameOption;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;

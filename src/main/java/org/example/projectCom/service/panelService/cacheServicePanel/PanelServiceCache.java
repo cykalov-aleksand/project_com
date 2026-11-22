@@ -1,14 +1,14 @@
 package org.example.projectCom.service.panelService.cacheServicePanel;
 
 import org.example.projectCom.dto.PanelDto;
+import org.example.projectCom.dto.enum_panels.OutputOption;
+import org.example.projectCom.dto.enum_panels.PanelNameOption;
 import org.example.projectCom.model.Panels;
 import org.example.projectCom.service.OutputUtils;
 import org.example.projectCom.service.panelService.PanelOccupancyLogic;
 import org.example.projectCom.service.panelService.service.PanelsService;
 import org.example.projectCom.service.panelService.myCache.HwCache;
 import org.example.projectCom.service.panelService.myCache.MyCache;
-import org.example.projectCom.setup_controller.OutputOption;
-import org.example.projectCom.setup_controller.PanelNameOption;
 
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
@@ -19,8 +19,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_OUTPUT_SWITCHING;
-import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_SYNCHRONIZATION;
+import static org.example.projectCom.dto.enum_panels.PanelNameOption.PANEL_OUTPUT_SWITCHING;
+import static org.example.projectCom.dto.enum_panels.PanelNameOption.PANEL_SYNCHRONIZATION;
+
 
 @Component
 public class PanelServiceCache {

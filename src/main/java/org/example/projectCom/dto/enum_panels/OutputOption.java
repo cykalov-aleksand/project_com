@@ -1,4 +1,4 @@
-package org.example.projectCom.setup_controller;
+package org.example.projectCom.dto.enum_panels;
 
 import lombok.Getter;
 

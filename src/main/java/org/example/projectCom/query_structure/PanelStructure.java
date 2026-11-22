@@ -1,6 +1,7 @@
 package org.example.projectCom.query_structure;
 
-import org.example.projectCom.setup_controller.PanelNameOption;
+import org.example.projectCom.dto.enum_panels.PanelNameOption;
+
 
 import java.util.List;
 
@@ -11,8 +12,8 @@ public enum PanelStructure {
             new FildSpec("outputs",FildType.OUTPUTS_BITMASK,5)))),
     SYNCHRONIZATION(new MessageStructure("Панель синхронизации",List.of(
             new FildSpec("key",FildType.UNIT8,1),
-                    new FildSpec("outputs",FildType.OUTPUTS_BITMASK,5),
-                    new FildSpec("divisor",FildType.UNIT16,2)))),
+            new FildSpec("outputs",FildType.OUTPUTS_BITMASK,5),
+            new FildSpec("divisor",FildType.UNIT16,2)))),
     GENERATOR(new MessageStructure("Панель генератора",List.of(
             new FildSpec("key",FildType.UNIT8,1),
             new FildSpec("outputs",FildType.OUTPUTS_BITMASK,5))));
@@ -32,3 +33,4 @@ public enum PanelStructure {
         };
     }
 }
+

@@ -1,10 +1,11 @@
 package org.example.projectCom.service;
 
+import org.example.projectCom.dto.enum_panels.OutputOption;
+import org.example.projectCom.dto.enum_panels.PanelNameOption;
 import org.example.projectCom.query_structure.MessageStructure;
 import org.example.projectCom.query_structure.PanelStructure;
 import org.example.projectCom.query_structure.PayloadBuffer;
-import org.example.projectCom.setup_controller.OutputOption;
-import org.example.projectCom.setup_controller.PanelNameOption;
+
 
 import java.util.*;
 

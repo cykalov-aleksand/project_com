@@ -1,10 +1,10 @@
 package org.example.projectCom.service.panelService;
 
 import org.example.projectCom.dto.PanelDto;
+import org.example.projectCom.dto.enum_panels.OutputOption;
+import org.example.projectCom.dto.enum_panels.PanelNameOption;
 import org.example.projectCom.model.Panels;
 import org.example.projectCom.service.OutputUtils;
-import org.example.projectCom.setup_controller.OutputOption;
-import org.example.projectCom.setup_controller.PanelNameOption;
 
 import java.util.ArrayList;
 import java.util.HashSet;

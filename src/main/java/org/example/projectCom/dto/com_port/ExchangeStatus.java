@@ -1,4 +1,4 @@
-package org.example.projectCom.port;
+package org.example.projectCom.dto.com_port;
 
 public enum ExchangeStatus {
     DELIVERED,      // эхо совпало — данные в МК

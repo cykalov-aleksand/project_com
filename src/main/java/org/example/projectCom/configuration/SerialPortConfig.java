@@ -7,4 +7,4 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(SerialPortProperties.class)
 public class SerialPortConfig {
 
-    }
+}

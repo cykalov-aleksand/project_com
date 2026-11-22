@@ -2,8 +2,8 @@ package org.example.projectCom.port;
 
 import com.fazecast.jSerialComm.SerialPort;
 import lombok.RequiredArgsConstructor;
-import org.example.projectCom.service.SerialPortService;
-import org.example.projectCom.service.SerialWorker;
+import org.example.projectCom.dto.com_port.ExchangeStatus;
+import org.example.projectCom.dto.com_port.PanelExchangeResult;
 import org.example.projectCom.service.errors.SerialPortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.*;
+
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +40,7 @@ public class PortService {
     public CompletableFuture<PanelExchangeResult> writePanelAsync(Long panelId, byte[] payload) {
         return CompletableFuture.supplyAsync(() -> {
             byte[] request = frames.buildWrite(payload);
-            PanelExchangeResult result = exchange(panelId, request, frames.writeResponseLength());
+            PanelExchangeResult result = exchange(panelId, request, request.length);
 
             // Пишем понятный статус в мапу
             String statusText;
@@ -91,9 +92,9 @@ public class PortService {
                 Arrays.copyOfRange(request, 0, 6),
                 Arrays.copyOfRange(response, 0, 6));
     }
-
     // Простой метод для контроллера: получить статус по ID панели
     public String getStatus(Long panelId) {
         return lastStatus.getOrDefault(panelId, "Ожидание");
     }
+
 }

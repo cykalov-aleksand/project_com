@@ -1,24 +1,30 @@
 package org.example.projectCom.controller;
 
-import org.example.projectCom.dto.PanelTestResult;
-import org.example.projectCom.port.PortService;
-import org.example.projectCom.service.panelService.cacheServicePanel.PanelServiceCache;
+
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.example.projectCom.dto.PanelDto;
+import org.example.projectCom.dto.PanelTestResult;
+import org.example.projectCom.dto.enum_panels.OutputOption;
+import org.example.projectCom.dto.enum_panels.PanelNameOption;
 import org.example.projectCom.model.Panels;
-import org.example.projectCom.service.*;
+import org.example.projectCom.port.PortService;
+import org.example.projectCom.service.ObjectService;
+import org.example.projectCom.service.OutputUtils;
+import org.example.projectCom.service.PanelTestService;
 import org.example.projectCom.service.errors.NoFreeOutputsException;
 import org.example.projectCom.service.errors.PanelValidationException;
 import org.example.projectCom.service.panelService.PanelGeneration;
 import org.example.projectCom.service.panelService.PanelOutputSwitch;
 import org.example.projectCom.service.panelService.PanelSynchronisation;
-import org.example.projectCom.setup_controller.OutputOption;
-import org.example.projectCom.setup_controller.PanelNameOption;
+import org.example.projectCom.service.panelService.cacheServicePanel.PanelServiceCache;
 import org.example.projectCom.setup_controller.SyncPeriodOption;
-import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriUtils;
 
@@ -26,8 +32,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_OUTPUT_SWITCHING;
-import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_SYNCHRONIZATION;
+import static org.example.projectCom.dto.enum_panels.PanelNameOption.PANEL_OUTPUT_SWITCHING;
+import static org.example.projectCom.dto.enum_panels.PanelNameOption.PANEL_SYNCHRONIZATION;
 
 @Controller
 @RequiredArgsConstructor
@@ -254,14 +260,26 @@ public class ControllerPanels {
                                @RequestParam Long objectId,
                                RedirectAttributes redirectAttributes) {
         try {
+            // Сначала проверяем, что панель вообще настроена — это можно сделать прямо здесь
             PanelDto panel = cachePanelService.getPanelDtoById(id);
             if (panel.getListCondition() == null || panel.getListCondition().isBlank()) {
                 redirectAttributes.addFlashAttribute("testResults",
                         java.util.Map.of(id, PanelTestResult.fail("Панель не настроена")));
-                return redirectToEdit(objectId);
+                return "redirect:/edit/" + objectId;
             }
-            byte[] payload = OutputUtils.fromJsonbHex(panel.getListCondition());
-            PanelTestResult result = panelTestService.runTest(id, payload);
+
+            // ВАЖНО: используем question — он делает реальную отправку и ждёт результат
+            String statusText = panelTestService.question(id, objectId);
+
+            // Превращаем строку из question в PanelTestResult, чтобы UI не ломался
+            PanelTestResult result;
+            if (statusText.startsWith("Передано")) {
+                result = PanelTestResult.ok(statusText);
+            } else {
+                // Сюда попадут «Не передано» и «Ошибка»
+                result = PanelTestResult.fail(statusText);
+            }
+
             redirectAttributes.addFlashAttribute("testResults", java.util.Map.of(id, result));
         } catch (EntityNotFoundException | IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("testResults",

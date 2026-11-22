@@ -2,12 +2,12 @@ package org.example.projectCom.service.panelService.cacheServicePanel;
 
 import lombok.RequiredArgsConstructor;
 import org.example.projectCom.dto.PanelDto;
+import org.example.projectCom.dto.enum_panels.OutputOption;
 import org.example.projectCom.model.Panels;
 import org.example.projectCom.service.OutputUtils;
 import org.example.projectCom.service.panelService.service.PanelsService;
 import org.example.projectCom.service.errors.PanelValidationException;
 import org.example.projectCom.service.panelService.PanelSynchronisation;
-import org.example.projectCom.setup_controller.OutputOption;
 import org.example.projectCom.setup_controller.SyncPeriodOption;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_SYNCHRONIZATION;
+import static org.example.projectCom.dto.enum_panels.PanelNameOption.PANEL_SYNCHRONIZATION;
+
 
 @Service
 @Primary

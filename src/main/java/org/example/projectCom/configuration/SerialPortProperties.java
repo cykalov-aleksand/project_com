@@ -3,6 +3,7 @@ package org.example.projectCom.configuration;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "serial")
@@ -14,4 +15,4 @@ public class SerialPortProperties {
     private int stopBits = 1;
     private int readTimeout = 2000;
     private int writeTimeout = 0;
-    }
+}

@@ -1,6 +1,8 @@
 package org.example.projectCom.service.panelService.service;
 
 import org.example.projectCom.dto.PanelDto;
+import org.example.projectCom.dto.enum_panels.OutputOption;
+import org.example.projectCom.dto.enum_panels.PanelNameOption;
 import org.example.projectCom.mapper.PanelsMapperDto;
 import org.example.projectCom.model.EquipmentObject;
 import org.example.projectCom.model.Panels;
@@ -8,8 +10,6 @@ import org.example.projectCom.repository.ObjectRepository;
 import org.example.projectCom.repository.PanelsRepository;
 import org.example.projectCom.service.OutputUtils;
 import org.example.projectCom.service.panelService.PanelOccupancyLogic;
-import org.example.projectCom.setup_controller.OutputOption;
-import org.example.projectCom.setup_controller.PanelNameOption;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
@@ -19,8 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_OUTPUT_SWITCHING;
-import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_SYNCHRONIZATION;
+import static org.example.projectCom.dto.enum_panels.PanelNameOption.PANEL_OUTPUT_SWITCHING;
+import static org.example.projectCom.dto.enum_panels.PanelNameOption.PANEL_SYNCHRONIZATION;
+
 
 @Service
 @RequiredArgsConstructor
@@ -136,7 +137,7 @@ public class PanelsService {
         Set<OutputOption> occupied = PanelOccupancyLogic.calculateFromEntities(allPanels, idPanel).occupied();
 
         // Если это панель коммутации — она не вычитает свои выходы.
-        if (panel.getNameElement() == PanelNameOption.PANEL_OUTPUT_SWITCHING) {
+        if (panel.getNameElement() == PANEL_OUTPUT_SWITCHING) {
             return occupied;
         }
 
