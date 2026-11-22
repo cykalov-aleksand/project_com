@@ -104,6 +104,22 @@
     cursor: pointer;
     font-size: 13px;
 }
+        .col-test { width: 110px; }
+.col-result { width: 200px; }
+
+.btn-test {
+    padding: 4px 10px;
+    background-color: #2196f3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.result-ok   { color: #2e7d32; font-weight: 600; }
+.result-fail { color: #d32f2f; font-weight: 600; }
+.result-idle { color: #999; }
     </style>
 </head>
 <body>
@@ -127,6 +143,8 @@
             <th class="col-name">Название панели</th>
             <th class="col-condition">Состояние панели</th>
             <th class="col-desc">Действия</th>
+            <th class="col-test">Запуск теста</th>
+            <th class="col-result">Результат отправки</th>
         </tr>
         </thead>
         <tbody>
@@ -147,6 +165,19 @@
                 <form th:action="@{/panels/delete/{id}(id=${panel.id})}" method="post" style="display:inline;">
                     <button type="submit" class="btn-delete">Удалить</button>
                 </form>
+            </td>
+            <td class="col-test">
+                <form th:action="@{/panels/test/{id}(id=${panel.id})}" method="post">
+                    <input type="hidden" name="objectId" th:value="${objectId}">
+                    <button type="submit" class="btn-test">Тест</button>
+                </form>
+            </td>
+            <td class="col-result">
+    <span th:if="${testResults != null and testResults.containsKey(panel.id)}"
+          th:classappend="${testResults[panel.id].ok} ? 'result-ok' : 'result-fail'"
+          th:text="${testResults[panel.id].text}"></span>
+                <span th:unless="${testResults != null and testResults.containsKey(panel.id)}"
+                      class="result-idle">—</span>
             </td>
         </tr>
         </tbody>

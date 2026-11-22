@@ -1,4 +1,4 @@
-package org.example.projectCom.service.panel_generation;
+package org.example.projectCom.service.panelService;
 
 import org.example.projectCom.model.Panels;
 

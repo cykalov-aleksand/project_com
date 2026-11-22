@@ -26,6 +26,7 @@ public class PanelsMapperDto {
         PanelDto dto = new PanelDto();
         dto.setId(object.getId());
         dto.setNameElement(object.getNameElement());
+        dto.setObjectId(object.getObject().getId());
         dto.setListCondition(object.getOutputsJsonString());
         return dto;
     }

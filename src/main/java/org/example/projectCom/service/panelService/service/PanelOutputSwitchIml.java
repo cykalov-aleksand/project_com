@@ -1,11 +1,11 @@
-package org.example.projectCom.service.panel_output_switch;
+package org.example.projectCom.service.panelService.service;
 
+import org.example.projectCom.dto.enum_panels.OutputOption;
 import org.example.projectCom.model.Panels;
 import org.example.projectCom.repository.PanelsRepository;
 import org.example.projectCom.service.OutputUtils;
 import org.example.projectCom.service.errors.PanelValidationException;
-import org.example.projectCom.service.PanelsService;
-import org.example.projectCom.setup_controller.OutputOption;
+import org.example.projectCom.service.panelService.PanelOutputSwitch;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,8 +16,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.example.projectCom.service.PanelsService.SWITCHING_PAYLOAD_SIZE;
-import static org.example.projectCom.setup_controller.PanelNameOption.PANEL_OUTPUT_SWITCHING;
+import static org.example.projectCom.dto.enum_panels.PanelNameOption.PANEL_OUTPUT_SWITCHING;
+import static org.example.projectCom.service.panelService.service.PanelsService.SWITCHING_PAYLOAD_SIZE;
+
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +51,7 @@ public class PanelOutputSwitchIml implements PanelOutputSwitch {
 // защита сохраняется: если снятое всё же пересекается с занятым,
 // значит, пришёл некорректный запрос — но через обычный флоу это недостижимо
         Set<OutputOption> removed = new HashSet<>(
-                OutputUtils.extractSelectedOutputs(panel.getOutputsJsonString()));
+                OutputUtils.extractSelectedOutputs(panel.getOutputsJsonString(),OutputUtils.payloadOffset(panel.getNameElement())));
         removed.removeAll(selected);
 
         if (!removed.isEmpty()) {

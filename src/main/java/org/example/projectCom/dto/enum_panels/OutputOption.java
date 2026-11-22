@@ -1,4 +1,4 @@
-package org.example.projectCom.setup_controller;
+package org.example.projectCom.dto.enum_panels;
 
 import lombok.Getter;
 
@@ -56,5 +56,10 @@ public enum OutputOption {
     }
     public String maskHex() {
         return String.format("%02X", bitMask);
+    }
+    public static OutputOption byIndex(int index) {
+        OutputOption[] values = values();
+        if (index < 0 || index >= values.length) return null;
+        return values[index];
     }
 }

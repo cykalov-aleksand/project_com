@@ -1,11 +1,11 @@
-package org.example.projectCom.service.panel_generation;
+package org.example.projectCom.service.panelService.service;
 
+import org.example.projectCom.dto.enum_panels.OutputOption;
 import org.example.projectCom.model.Panels;
 import org.example.projectCom.repository.PanelsRepository;
 import org.example.projectCom.service.errors.NoFreeOutputsException;
 import org.example.projectCom.service.OutputUtils;
-import org.example.projectCom.service.PanelsService;
-import org.example.projectCom.setup_controller.OutputOption;
+import org.example.projectCom.service.panelService.PanelGeneration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

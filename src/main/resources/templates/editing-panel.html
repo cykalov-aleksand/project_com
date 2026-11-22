@@ -88,9 +88,14 @@
   </style>
 </head>
 <body>
+
 <div class="card">
   <h2 th:text="${pageTitle}"></h2>
   <p>Панель: <span th:text="${panel.nameElement.displayName}"></span></p>
+  <div th:class="${portStatus.startsWith('Передано') ? 'status-delivered' :
+                   (portStatus.startsWith('Не передано') ? 'status-failed' : 'status-waiting')}">
+    <span th:text="${portStatus}"></span>
+  </div>
 </div>
 
 <form th:action="@{/panels/{id}/edit/save(id=${panel.id})}" method="post">
