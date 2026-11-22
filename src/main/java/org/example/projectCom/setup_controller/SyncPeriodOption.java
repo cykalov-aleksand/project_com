@@ -4,6 +4,7 @@ import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
+
 @Getter
 public class SyncPeriodOption {
     private final String displayName;

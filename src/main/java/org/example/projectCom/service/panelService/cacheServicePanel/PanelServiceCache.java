@@ -43,7 +43,9 @@ public class PanelServiceCache {
 
     // ==================== ОСНОВА КЭША ====================
 
-    /** Основной метод: список панелей объекта из кэша (или из БД при промахе). */
+    /**
+     * Основной метод: список панелей объекта из кэша (или из БД при промахе).
+     */
     public List<PanelDto> findPanelsIdObject(Long objectId) {
         checkAndSwitch(objectId);
 
@@ -59,7 +61,9 @@ public class PanelServiceCache {
         return fresh;
     }
 
-    /** Поиск панели по id: сначала кэш, при промахе — БД. */
+    /**
+     * Поиск панели по id: сначала кэш, при промахе — БД.
+     */
     public PanelDto getPanelDtoById(Long id) {
         // 1. если кэш уже привязан к объекту — ищем панель в его списке
         if (currentObjectId != null) {
@@ -94,7 +98,10 @@ public class PanelServiceCache {
 
     // ⚠️ Однопользовательский режим: кэш привязан к одному объекту.
 // Не использовать в многопользовательском сценарии без доработки.
-    /** Сброс кэша при смене objectId. */
+
+    /**
+     * Сброс кэша при смене objectId.
+     */
     private void checkAndSwitch(Long objectId) {
         if (currentObjectId == null || !currentObjectId.equals(objectId)) {
             if (currentObjectId != null) {
@@ -107,7 +114,9 @@ public class PanelServiceCache {
 
     // ==================== ЗАПИСЬ ====================
 
-    /** Создание панели: делегируем в сервис, после создания — перезагрузка кэша. */
+    /**
+     * Создание панели: делегируем в сервис, после создания — перезагрузка кэша.
+     */
     public Panels createPanel(Long objectId, PanelNameOption type) {
         Panels created = panelsService.createPanel(objectId, type);
         panelsDtoCache.remove(objectId);
@@ -115,7 +124,9 @@ public class PanelServiceCache {
         return created;
     }
 
-    /** Запись JSON в панель: делегируем в сервис, после записи — перезагрузка кэша. */
+    /**
+     * Запись JSON в панель: делегируем в сервис, после записи — перезагрузка кэша.
+     */
     public Panels persist(Panels panel, byte[] payload, Long objectId) {
         Panels saved = panelsService.persist(panel, payload);
         panelsDtoCache.remove(objectId);
@@ -125,7 +136,9 @@ public class PanelServiceCache {
 
     // ==================== ПРОИЗВОДНЫЕ ЧТЕНИЯ ====================
 
-    /** Доступные для создания типы панелей — из кэша. */
+    /**
+     * Доступные для создания типы панелей — из кэша.
+     */
     public List<PanelNameOption> getAvailablePanelTypes(Long objectId) {
         Set<PanelNameOption> existingTypes = findPanelsIdObject(objectId).stream()
                 .map(PanelDto::getNameElement)
@@ -145,7 +158,9 @@ public class PanelServiceCache {
     }
 
 
-    /** Проверка наличия панели заданного типа: из кэша. */
+    /**
+     * Проверка наличия панели заданного типа: из кэша.
+     */
     public boolean existsPanelType(Long objectId, PanelNameOption type) {
         return findPanelsIdObject(objectId).stream()
                 .map(PanelDto::getNameElement)
@@ -153,7 +168,9 @@ public class PanelServiceCache {
     }
 
 
-    /** Чтение строки JSON по указанному объекту с заданным типом панели — из кэша. */
+    /**
+     * Чтение строки JSON по указанному объекту с заданным типом панели — из кэша.
+     */
     public String getPanelJson(Long objectId, PanelNameOption type) {
         return findPanelsIdObject(objectId).stream()
                 .filter(p -> p.getNameElement().equals(type))
@@ -162,14 +179,18 @@ public class PanelServiceCache {
                 .orElse(null);
     }
 
-    /** Список свободных элементов указанной панели по заданному объекту — из кэша. */
+    /**
+     * Список свободных элементов указанной панели по заданному объекту — из кэша.
+     */
     public List<OutputOption> listCheckboxPanelId(Long objectId, Long excludePanelId) {
         List<PanelDto> panels = findPanelsIdObject(objectId);
         return PanelOccupancyLogic.calculateFromDtos(panels, excludePanelId).free();
     }
 
 
-    /** Сетка выходов панели — из кэша. */
+    /**
+     * Сетка выходов панели — из кэша.
+     */
 
     public Map<Integer, List<OutputOption>> buildOutputGrid(Long idPanel) {
         PanelDto panel = getPanelDtoById(idPanel);
@@ -192,7 +213,9 @@ public class PanelServiceCache {
         return OutputUtils.buildFixedGrid(visible);
     }
 
-    /** Выходы, занятые другими панелями объекта — из кэша. */
+    /**
+     * Выходы, занятые другими панелями объекта — из кэша.
+     */
 
     public Set<OutputOption> takenByOthers(Long idPanel) {
         PanelDto panel = getPanelDtoById(idPanel);
@@ -213,7 +236,9 @@ public class PanelServiceCache {
 
     // ==================== ДЕЛЕГИРОВАНИЕ ====================
 
-    /** Чистая логика построения сетки — делегируем, кэш подтягивается внутри цепочки сервиса. */
+    /**
+     * Чистая логика построения сетки — делегируем, кэш подтягивается внутри цепочки сервиса.
+     */
     public Map<Integer, List<OutputOption>> groupOfPointersWeekends(
             PanelNameOption panelNameOption, Long objectId, Long panelId) {
         Map<Integer, List<OutputOption>> outputGroups = new LinkedHashMap<>();
@@ -225,19 +250,23 @@ public class PanelServiceCache {
         }
         if (panelNameOption == PANEL_SYNCHRONIZATION) {
             return OutputUtils.buildFixedGrid(
-                    OutputUtils.extractSelectedOutputs(getPanelJson(objectId, PANEL_OUTPUT_SWITCHING),PANEL_OUTPUT_SWITCHING));
+                    OutputUtils.extractSelectedOutputs(getPanelJson(objectId, PANEL_OUTPUT_SWITCHING), PANEL_OUTPUT_SWITCHING));
         }
         return OutputUtils.buildFixedGrid(listCheckboxPanelId(objectId, panelId));
     }
 
-    /** Проверка разрешённых выходов — делегируем. */
+    /**
+     * Проверка разрешённых выходов — делегируем.
+     */
     public void assertAllowed(List<OutputOption> selected,
                               @NonNull Set<OutputOption> allowed,
                               String errorMessage) {
         panelsService.assertAllowed(selected, allowed, errorMessage);
     }
 
-    /** Удаление панели: делегируем в сервис, после удаления — перезагрузка кэша. */
+    /**
+     * Удаление панели: делегируем в сервис, после удаления — перезагрузка кэша.
+     */
     public Long deletePanel(Long panelId) {
         Long objectId = panelsService.deletePanel(panelId);
         panelsDtoCache.remove(objectId);

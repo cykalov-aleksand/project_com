@@ -20,6 +20,7 @@ public class PanelTestService {
 
     private final PanelServiceCache panelServiceCache;
     private final PortService portService;
+
     /**
      * ЗАГЛУШКА: используется только для массового теста (requestObject),
      * чтобы быстро проверить логику отчёта без реального железа.
@@ -169,6 +170,7 @@ public class PanelTestService {
 
         return order;
     }
+
     /**
      * Вспомогательный метод: находит ID панели по её типу (PanelNameOption)
      */

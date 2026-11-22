@@ -38,7 +38,6 @@ import static org.example.projectCom.dto.enum_panels.PanelNameOption.PANEL_SYNCH
 @Controller
 @RequiredArgsConstructor
 public class ControllerPanels {
-    // private final PanelsService panelsService;
     private final PanelServiceCache cachePanelService;
     private final ObjectService objectService;
     private final PanelGeneration panelGeneration;

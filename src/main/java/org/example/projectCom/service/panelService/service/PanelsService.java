@@ -31,11 +31,13 @@ public class PanelsService {
     private final PanelsMapperDto panelsMapperDto;
 
     public static final int SWITCHING_PAYLOAD_SIZE = 5;
+
     @Transactional(readOnly = true)
     public List<PanelDto> findPanelsIdObject(Long objectId) {
         List<Panels> panelsList = panelsRepository.findPanels(objectId);
         return panelsList.stream().map(panelsMapperDto::toDto).toList();
     }
+
     //метод создания панели в БД
     @Transactional
     public Panels createPanel(Long objectId, PanelNameOption panelNameOption) {
@@ -52,11 +54,13 @@ public class PanelsService {
         return panelsRepository.save(panel);
         //return panel;
     }
+
     //поиск панели по Id
     public Panels getPanelById(Long id) {
         return panelsRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Панель с ID " + id + " не найдена"));
     }
+
     //метод создания списка имен панелей для исследуемого id объекта с последующим выводом его в комбобокс
     //с целью отслеживания какие панели на данный момент присутствуют в указанном объекте и принятия решения какие панели доступны для создания
     public List<PanelNameOption> getAvailablePanelTypes(Long objectId) {
@@ -77,12 +81,14 @@ public class PanelsService {
         }
         return available;
     }
+
     // метод проверки наличие панели для исследуемого объекта
     public boolean existsPanelType(Long objectId, PanelNameOption type) {
         return panelsRepository.findPanels(objectId).stream()
                 .map(Panels::getNameElement)
                 .anyMatch(o -> o.equals(type));
     }
+
     //создание мапы содержащей количество элементов на выводимой панели
     public Map<Integer, List<OutputOption>> groupOfPointersWeekends(PanelNameOption panelNameOption, Long objectId, Long panelId) {
         Map<Integer, List<OutputOption>> outputGroups = new LinkedHashMap<>();
@@ -99,11 +105,13 @@ public class PanelsService {
         }
         return OutputUtils.buildFixedGrid(listCheckboxPanelId(objectId, panelId));
     }
+
     //создания списка свободных элементов указанной панели, по заданному объекту
     public List<OutputOption> listCheckboxPanelId(Long objectId, Long excludePanelId) {
         List<Panels> panels = panelsRepository.findPanels(objectId);
         return PanelOccupancyLogic.calculateFromEntities(panels, excludePanelId).free();
     }
+
     // чтение строки JSON по указанному объекту с заданным типом панели
     @Transactional(readOnly = true)
     public String getPanelJson(Long objectId, PanelNameOption type) {
@@ -113,6 +121,7 @@ public class PanelsService {
                 .findFirst()
                 .orElse(null);
     }
+
     // создание мапы с последующим ее использованием для формирования списка элементов на панели
     public Map<Integer, List<OutputOption>> buildOutputGrid(Long idPanel) {
         Panels panel = getPanelById(idPanel);
@@ -123,13 +132,14 @@ public class PanelsService {
                 panel.getOutputsJsonString(),
                 OutputUtils.payloadOffset(panel.getNameElement()));
         List<OutputOption> free = listCheckboxPanelId(
-                panel.getObject().getId(),idPanel);
+                panel.getObject().getId(), idPanel);
         List<OutputOption> visible = new ArrayList<>(selected);
         for (OutputOption element : free) {
             if (!visible.contains(element)) visible.add(element);
         }
         return OutputUtils.buildFixedGrid(visible);
     }
+
     //создания сет выходов занятых в дочерних панелях, свои выходы не блокируются
     public Set<OutputOption> takenByOthers(Long idPanel) {
         Panels panel = getPanelById(idPanel);
@@ -148,11 +158,13 @@ public class PanelsService {
         occupied.removeAll(mine);
         return occupied;
     }
+
     //запись строки JSON в объект базы данных
     public Panels persist(Panels panel, byte[] payload) {
         panel.setOutputsJsonString(OutputUtils.toJsonbHex(payload));
         return panelsRepository.save(panel);
     }
+
     public void assertAllowed(List<OutputOption> selected,
                               @NonNull Set<OutputOption> allowed,
                               String errorMessage) {
@@ -160,6 +172,7 @@ public class PanelsService {
             throw new IllegalArgumentException(errorMessage);
         }
     }
+
     @Transactional
     public Long deletePanel(Long panelId) {
         Panels panel = panelsRepository.findById(panelId)

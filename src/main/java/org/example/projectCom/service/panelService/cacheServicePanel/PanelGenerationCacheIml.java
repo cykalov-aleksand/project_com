@@ -17,10 +17,10 @@ import java.util.List;
 
 @Service
 @Primary
-    @RequiredArgsConstructor
-    public class PanelGenerationCacheIml implements PanelGeneration {
-        private final PanelsService panelsService;
-        private final PanelServiceCache cachePanelService;
+@RequiredArgsConstructor
+public class PanelGenerationCacheIml implements PanelGeneration {
+    private final PanelsService panelsService;
+    private final PanelServiceCache cachePanelService;
 
     @Transactional
     public Panels save(Long panelId, List<String> outputs) {
@@ -53,8 +53,8 @@ import java.util.List;
     }
 
     @Override
-     public Long delete(Long panelId) {
+    public Long delete(Long panelId) {
         return cachePanelService.deletePanel(panelId);
     }
-    }
+}
 

@@ -15,15 +15,17 @@ public class ObjectService {
     private final ObjectRepository objectRepository;
     private final ObjectMapperDto objectMapperDto;
 
-    public List<EquipmentObjectDto>findAllObject(){
+    public List<EquipmentObjectDto> findAllObject() {
         return objectRepository.findAll().stream().map(objectMapperDto::toDto).toList();
     }
+
     public EquipmentObjectDto findById(Long id) {
         EquipmentObject entity = objectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Объект не найден"));
         return objectMapperDto.toDto(entity);
     }
-    public List<EquipmentObjectDto> findByName(String name){
+
+    public List<EquipmentObjectDto> findByName(String name) {
         String clean = name == null ? "" : name.trim();
         return objectRepository.findObjectByNameContaining(clean).stream().map(objectMapperDto::toDto).toList();
     }
@@ -34,16 +36,19 @@ public class ObjectService {
         EquipmentObject saved = objectRepository.save(entity);
         return objectMapperDto.toDto(saved);
     }
-    public String getNameById(Long objectId){
+
+    public String getNameById(Long objectId) {
         return objectRepository.findById(objectId)
                 .orElseThrow(() -> new RuntimeException("Объект с ID " + objectId + " не найден"))
                 .getName();
     }
-    public EquipmentObject getById(Long objectId){
+
+    public EquipmentObject getById(Long objectId) {
         return objectRepository.findById(objectId)
                 .orElseThrow(() -> new RuntimeException("Объект не найден"));
     }
-    public void delete(Long id){
+
+    public void delete(Long id) {
         objectRepository.deleteById(id);
     }
 }

@@ -11,12 +11,12 @@ import java.util.*;
 
 /**
  * Утилитный класс для упаковки/распаковки конфигураций панелей.
-
+ * <p>
  * Форматы пакетов (индексация байтов с нуля):
- *   Коммутация:   [0]=ключ панели, [1..5]=маски выходов (5 байтов)
- *   Синхронизация: [0]=ключ панели, [1..2]=делитель периода (big-endian),
- *                  [3..7]=маски выходов (5 байтов)
-
+ * Коммутация:   [0]=ключ панели, [1..5]=маски выходов (5 байтов)
+ * Синхронизация: [0]=ключ панели, [1..2]=делитель периода (big-endian),
+ * [3..7]=маски выходов (5 байтов)
+ * <p>
  * Маски хранятся в базе как hex-строка вида "0200640303030303".
  */
 public final class OutputUtils {
@@ -184,6 +184,7 @@ public final class OutputUtils {
     public static int payloadOffset(PanelNameOption type) {
         return PanelStructure.of(type).structure().offsetOf("outputs");
     }
+
     public static List<OutputOption> extractSelectedOutputs(String jsonbHex, PanelNameOption type) {
         return extractSelectedOutputs(jsonbHex, payloadOffset(type));
     }

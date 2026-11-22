@@ -28,7 +28,8 @@ public class PanelOccupancyLogic {
 
         for (Panels p : panels) {
             if (p.getId().equals(excludePanelId)) continue;
-            if (p.getNameElement().equals(PanelNameOption.PANEL_OUTPUT_SWITCHING)) continue; // коммутация не занимает чужие
+            if (p.getNameElement().equals(PanelNameOption.PANEL_OUTPUT_SWITCHING))
+                continue; // коммутация не занимает чужие
 
             List<OutputOption> taken = OutputUtils.extractSelectedOutputs(
                     p.getOutputsJsonString(),
@@ -69,7 +70,10 @@ public class PanelOccupancyLogic {
         return new OccupancyResult(new ArrayList<>(free), occupied);
     }
 
-    /** Простой контейнер для результата. */
-    public record OccupancyResult(List<OutputOption> free, Set<OutputOption> occupied) {}
+    /**
+     * Простой контейнер для результата.
+     */
+    public record OccupancyResult(List<OutputOption> free, Set<OutputOption> occupied) {
+    }
 }
 

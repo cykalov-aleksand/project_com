@@ -26,6 +26,7 @@ public class ControllerElement {
     private final ObjectService panelService;
     private final PanelServiceCache cachePanelService;
     private final PanelTestService panelTestService;
+
     @GetMapping("/com_port")
     public String choiceComPort(@RequestParam String nameComPort, RedirectAttributes ra) {
         try {
@@ -36,6 +37,7 @@ public class ControllerElement {
         }
         return "redirect:/";
     }
+
     @GetMapping("/")
     public String find(@RequestParam(required = false) String search, Model model) {
         SerialPort[] listComPort;
@@ -81,11 +83,13 @@ public class ControllerElement {
         panelService.saveObjectDto(dto);
         return "redirect:/";
     }
+
     @PostMapping("/delete/{id}")
     public String deleteCell(@PathVariable Long id) {
         panelService.delete(id); // или service.delete(id)
         return "redirect:/"; // после удаления сразу на список
     }
+
     @PostMapping("/objects/test/{id}")
     public String runElementTest(@PathVariable Long id, RedirectAttributes ra) {
         try {
