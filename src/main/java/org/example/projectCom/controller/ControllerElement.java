@@ -2,29 +2,26 @@ package org.example.projectCom.controller;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.example.projectCom.dto.EquipmentObjectDto;
-import org.example.projectCom.dto.PanelDto;
 import org.example.projectCom.dto.PanelTestResult;
 import org.example.projectCom.port.SerialPortService;
 import org.example.projectCom.service.ObjectService;
 import com.fazecast.jSerialComm.SerialPort;
 import lombok.RequiredArgsConstructor;
-import org.example.projectCom.service.OutputUtils;
 import org.example.projectCom.service.PanelTestService;
 import org.example.projectCom.service.errors.SerialPortException;
-import org.example.projectCom.service.panelService.cacheServicePanel.PanelServiceCache;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
 public class ControllerElement {
     private final SerialPortService serialPortService;
     private final ObjectService panelService;
-    private final PanelServiceCache cachePanelService;
     private final PanelTestService panelTestService;
 
     @GetMapping("/com_port")
@@ -91,47 +88,14 @@ public class ControllerElement {
     }
 
     @PostMapping("/objects/test/{id}")
-    public String runElementTest(@PathVariable Long id, RedirectAttributes ra) {
+    public String sendAllPanelsForObject(@PathVariable Long id, RedirectAttributes ra) {
         try {
-            List<PanelDto> panels = cachePanelService.findPanelsIdObject(id);
-            if (panels.isEmpty()) {
-                ra.addFlashAttribute("testResults",
-                        java.util.Map.of(id, PanelTestResult.fail("У ячейки нет панелей")));
-                return "redirect:/";
-            }
-
-            int sent = 0;
-            List<String> problems = new java.util.ArrayList<>();
-            for (PanelDto panel : panels) {
-                String name = panel.getNameElement().getDisplayName();
-                if (panel.getListCondition() == null || panel.getListCondition().isBlank()) {
-                    problems.add(name + ": не настроена");
-                    continue;
-                }
-                try {
-                    byte[] payload = OutputUtils.fromJsonbHex(panel.getListCondition());
-                    PanelTestResult r = panelTestService.runTest(panel.getId(), payload);
-                    if (r.ok()) {
-                        sent++;
-                    } else {
-                        problems.add(name + ": " + r.text());
-                    }
-                } catch (IllegalArgumentException e) {
-                    problems.add(name + ": " + e.getMessage());
-                }
-            }
-
-            String text = problems.isEmpty()
-                    ? "Отправлено " + sent + " из " + panels.size() + " панелей"
-                    : "Отправлено " + sent + " из " + panels.size()
-                    + ". Проблемы: " + String.join("; ", problems);
-
-            ra.addFlashAttribute("testResults",
-                    java.util.Map.of(id, new PanelTestResult(problems.isEmpty(), text)));
+            String result = panelTestService.sendObjectPanels(id);
+            ra.addFlashAttribute("testResults", Map.of(id, new PanelTestResult(result.startsWith("Передано"), result)));
         } catch (EntityNotFoundException | IllegalStateException e) {
             ra.addFlashAttribute("testResults",
-                    java.util.Map.of(id, PanelTestResult.fail("Ошибка: " + e.getMessage())));
+                    Map.of(id, PanelTestResult.fail("Ошибка: " + e.getMessage())));
         }
-        return "redirect:/";
+        return "redirect:/"; // или на нужную страницу
     }
 }

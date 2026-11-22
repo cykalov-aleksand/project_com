@@ -181,7 +181,91 @@ public class PanelTestService {
                 .map(PanelDto::getId)
                 .orElse(null);
     }
+    /**
+     * Отправляет все панели объекта в правильном порядке:
+     * 1. Панель вывода
+     * 2. Панель синхронизации
+     * 3. Остальные панели (генераторы и др.)
+     */
+    public String sendObjectPanels(Long objectId) {
+        List<PanelDto> allPanels = panelServiceCache.findPanelsIdObject(objectId);
+        if (allPanels == null || allPanels.isEmpty()) {
+            return "Не найдены панели для объекта " + objectId;
+        }
+
+        // Сначала формируем порядок — это чистая логика, без отправки
+        List<Long> order = buildObjectOrder(allPanels);
+
+        StringBuilder logText = new StringBuilder();
+        boolean allOk = true;
+
+        for (Long idToSend : order) {
+            PanelDto target = panelServiceCache.getPanelDtoById(idToSend);
+            if (target == null) {
+                logText.append("Панель ID ").append(idToSend).append(" не найдена; ");
+                allOk = false;
+                continue;
+            }
+            if (target.getListCondition() == null || target.getListCondition().isBlank()) {
+                logText.append(target.getNameElement().getDisplayName()).append(" не настроена; ");
+                allOk = false;
+                continue;
+            }
+
+            byte[] payload = OutputUtils.fromJsonbHex(target.getListCondition());
+            System.err.println("Отправка: " + target.getNameElement().getDisplayName() + " (ID=" + idToSend + ") -> " + Arrays.toString(payload));
+
+            try {
+                PanelExchangeResult result = portService.writePanelAsync(idToSend, payload).join();
+                if (result.status() == ExchangeStatus.DELIVERED) {
+                    logText.append(target.getNameElement().getDisplayName()).append(" OK; ");
+                } else {
+                    logText.append(target.getNameElement().getDisplayName())
+                            .append(" ошибка: ").append(result.message()).append("; ");
+                    allOk = false;
+                }
+            } catch (Exception e) {
+                logText.append(target.getNameElement().getDisplayName())
+                        .append(" исключение: ").append(e.getMessage()).append("; ");
+                allOk = false;
+            }
+        }
+
+        return allOk
+                ? "Передано (все панели объекта успешно обработаны)"
+                : "Передано частично: " + logText.toString();
+    }
+
+    /**
+     * Формирует порядок отправки панелей для всего объекта:
+     * - Панель вывода (если есть)
+     * - Панель синхронизации (если есть)
+     * - Все остальные панели по порядку (можно добавить сортировку)
+     */
+    private List<Long> buildObjectOrder(List<PanelDto> panels) {
+        List<Long> order = new ArrayList<>();
+
+        Long outputId = findPanelIdByType(panels, PanelNameOption.PANEL_OUTPUT_SWITCHING);
+        Long syncId = findPanelIdByType(panels, PanelNameOption.PANEL_SYNCHRONIZATION);
+
+        if (outputId != null) {
+            order.add(outputId);
+        }
+        if (syncId != null) {
+            order.add(syncId);
+        }
+
+        // Добавляем все остальные панели.
+        // Если важен строгий порядок генераторов — можно отсортировать panels перед этим циклом.
+        for (PanelDto p : panels) {
+            if (p.getId().equals(outputId) || p.getId().equals(syncId)) {
+                continue; // уже добавили
+            }
+            // Если у тебя есть признак «активна», сюда можно добавить проверку, например:
+            // if (!p.isActive()) continue;
+            order.add(p.getId());
+        }
+
+        return order;
+    }
 }
-
-
-
