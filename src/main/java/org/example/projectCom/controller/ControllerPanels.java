@@ -11,7 +11,7 @@ import org.example.projectCom.model.Panels;
 import org.example.projectCom.port.PortService;
 import org.example.projectCom.service.ObjectService;
 import org.example.projectCom.service.OutputUtils;
-import org.example.projectCom.service.PanelTestService;
+import org.example.projectCom.service.PanelComService;
 import org.example.projectCom.service.errors.NoFreeOutputsException;
 import org.example.projectCom.service.errors.PanelValidationException;
 import org.example.projectCom.service.panelService.PanelGeneration;
@@ -44,7 +44,7 @@ public class ControllerPanels {
     private final PanelSynchronisation panelSynchronisation;
     private final PanelOutputSwitch panelOutputSwitch;
     private final PortService portService;
-    private final PanelTestService panelTestService;
+    private final PanelComService panelTestService;
 
     @GetMapping("/panels/edit/{id}/{name}")
     public String showEditPanelsNameObject(@PathVariable Long id, @PathVariable String name,

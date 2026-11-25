@@ -16,7 +16,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class PanelTestService {
+public class PanelComService {
 
     private final PanelServiceCache panelServiceCache;
     private final PortService portService;

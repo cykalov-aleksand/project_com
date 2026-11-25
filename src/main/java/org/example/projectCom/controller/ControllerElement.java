@@ -7,7 +7,7 @@ import org.example.projectCom.port.SerialPortService;
 import org.example.projectCom.service.ObjectService;
 import com.fazecast.jSerialComm.SerialPort;
 import lombok.RequiredArgsConstructor;
-import org.example.projectCom.service.PanelTestService;
+import org.example.projectCom.service.PanelComService;
 import org.example.projectCom.service.errors.SerialPortException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,7 +22,7 @@ import java.util.Map;
 public class ControllerElement {
     private final SerialPortService serialPortService;
     private final ObjectService panelService;
-    private final PanelTestService panelTestService;
+    private final PanelComService panelTestService;
 
     @GetMapping("/com_port")
     public String choiceComPort(@RequestParam String nameComPort, RedirectAttributes ra) {
