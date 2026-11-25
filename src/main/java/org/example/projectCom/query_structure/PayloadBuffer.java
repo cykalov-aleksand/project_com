@@ -29,8 +29,8 @@ public class PayloadBuffer {
 
     public PayloadBuffer putUInt16(String name, int value) {
         int offset = struct.offsetOf(name);
-        data[offset] = (byte) ((value >> 8) & 0xFF); // старший байт — первым
-        data[offset + 1] = (byte) (value & 0xFF);        // младший — вторым
+        data[offset+1] = (byte) ((value >> 8) & 0xFF); // старший байт — первым
+        data[offset] = (byte) (value & 0xFF);        // младший — вторым
         return this;
     }
 
