@@ -27,6 +27,8 @@ class PanelServiceCacheTest {
 
     private static final Long OBJECT_ID = 5L;
     private static final Long PANEL_ID = 10L;
+    private static final Long OTHER_OBJECT_ID = 7L;
+    private static final Long OTHER_PANEL_ID = 20L;
 
     @BeforeEach
     void setUp() {
@@ -41,11 +43,10 @@ class PanelServiceCacheTest {
     }
 
     @Nested
-    @DisplayName("findPanelsIdObject")
-    class FindPanels {
+    @DisplayName("чтение")
+    class Reading {
 
         @Test
-        @DisplayName("промах — читает из БД и кладёт в кэш")
         void missesThenCaches() {
             when(panelsService.findPanelsIdObject(OBJECT_ID))
                     .thenReturn(List.of(dto(PANEL_ID, OBJECT_ID)));
@@ -57,30 +58,6 @@ class PanelServiceCacheTest {
             // БД запрошена ровно один раз — второй вызов из кэша
             verify(panelsService, times(1)).findPanelsIdObject(OBJECT_ID);
         }
-
-        @Test
-        @DisplayName("смена объекта — старый кэш сброшен, новый объект читается из БД")
-        void switchesObjectAndEvictsPrevious() {
-            Long otherObject = 7L;
-            when(panelsService.findPanelsIdObject(OBJECT_ID))
-                    .thenReturn(List.of(dto(PANEL_ID, OBJECT_ID)));
-            when(panelsService.findPanelsIdObject(otherObject))
-                    .thenReturn(List.of(dto(20L, otherObject)));
-
-            cacheService.findPanelsIdObject(OBJECT_ID);
-            cacheService.findPanelsIdObject(otherObject);      // переключение
-            cacheService.findPanelsIdObject(OBJECT_ID);        // вернулись — кэша нет
-
-            // по 2 обращения к БД: первый визит объекта 5 был из кэша, но после
-            // переключения на 7 и обратно кэш объекта 5 сброшен
-            verify(panelsService, times(2)).findPanelsIdObject(OBJECT_ID);
-            verify(panelsService, times(1)).findPanelsIdObject(otherObject);
-        }
-    }
-
-    @Nested
-    @DisplayName("getPanelDtoById")
-    class GetPanelDtoById {
 
         @Test
         @DisplayName("панель есть в кэше текущего объекта — БД не вызывается")
@@ -114,9 +91,25 @@ class PanelServiceCacheTest {
             verify(panelsService).getPanelById(PANEL_ID);
         }
 
+
         @Nested
         @DisplayName("запись сбрасывает кэш")
         class Invalidation {
+            @Test
+            @DisplayName("deletePanel — кэш объекта сброшен, следующий запрос идёт в БД")
+            void deleteEvictsObjectCache() {
+                when(panelsService.findPanelsIdObject(OBJECT_ID))
+                        .thenReturn(List.of(dto(PANEL_ID, OBJECT_ID)));
+                cacheService.findPanelsIdObject(OBJECT_ID);            // кэш прогрет
+
+                when(panelsService.deletePanel(PANEL_ID)).thenReturn(OBJECT_ID);
+
+                Long returnedObjectId = cacheService.deletePanel(PANEL_ID);
+
+                assertThat(returnedObjectId).isEqualTo(OBJECT_ID);
+                cacheService.findPanelsIdObject(OBJECT_ID);            // должен пойти в БД снова
+                verify(panelsService, times(2)).findPanelsIdObject(OBJECT_ID);
+            }
 
             @Test
             @DisplayName("persist — кэш объекта сброшен, следующий запрос идёт в БД")
@@ -148,6 +141,61 @@ class PanelServiceCacheTest {
 
                 verify(panelsService).persist(panel, new byte[]{1});
             }
+        }
+    }
+
+    @Nested
+    @DisplayName("многопользовательский режим")
+    class MultiUser {
+
+        @Test
+        @DisplayName("кэши разных объектов независимы: переключение не сбрасывает записи")
+        void cachesOfDifferentObjectsAreIndependent() {
+            when(panelsService.findPanelsIdObject(OBJECT_ID))
+                    .thenReturn(List.of(dto(PANEL_ID, OBJECT_ID)));
+            when(panelsService.findPanelsIdObject(OTHER_OBJECT_ID))
+                    .thenReturn(List.of(dto(OTHER_PANEL_ID, OTHER_OBJECT_ID)));
+
+            cacheService.findPanelsIdObject(OBJECT_ID);
+            cacheService.findPanelsIdObject(OTHER_OBJECT_ID);
+            cacheService.findPanelsIdObject(OBJECT_ID); // вернулись — кэш ещё жив
+
+            verify(panelsService, times(1)).findPanelsIdObject(OBJECT_ID);
+            verify(panelsService, times(1)).findPanelsIdObject(OTHER_OBJECT_ID);
+        }
+
+        @Test
+        @DisplayName("панель другого закэшированного объекта находится без обращения к getPanelById")
+        void findsPanelOfAnotherCachedObject() {
+            when(panelsService.findPanelsIdObject(OTHER_OBJECT_ID))
+                    .thenReturn(List.of(dto(OTHER_PANEL_ID, OTHER_OBJECT_ID)));
+            cacheService.findPanelsIdObject(OTHER_OBJECT_ID);
+
+            PanelDto result = cacheService.getPanelDtoById(OTHER_PANEL_ID);
+
+            assertThat(result.getId()).isEqualTo(OTHER_PANEL_ID);
+            verify(panelsService, never()).getPanelById(any());
+        }
+
+        @Test
+        @DisplayName("persist сбрасывает кэш только своего объекта — чужой остаётся живым")
+        void persistEvictsOnlyTargetObject() {
+            when(panelsService.findPanelsIdObject(OBJECT_ID))
+                    .thenReturn(List.of(dto(PANEL_ID, OBJECT_ID)));
+            when(panelsService.findPanelsIdObject(OTHER_OBJECT_ID))
+                    .thenReturn(List.of(dto(OTHER_PANEL_ID, OTHER_OBJECT_ID)));
+            cacheService.findPanelsIdObject(OBJECT_ID);
+            cacheService.findPanelsIdObject(OTHER_OBJECT_ID);
+
+            when(panelsService.persist(any(Panels.class), any(byte[].class)))
+                    .thenReturn(new Panels());
+            cacheService.persist(new Panels(), new byte[]{1}, OBJECT_ID);
+
+            cacheService.findPanelsIdObject(OBJECT_ID);       // перечитается — 2-й раз
+            cacheService.findPanelsIdObject(OTHER_OBJECT_ID); // останется в кэше — 1-й раз
+
+            verify(panelsService, times(2)).findPanelsIdObject(OBJECT_ID);
+            verify(panelsService, times(1)).findPanelsIdObject(OTHER_OBJECT_ID);
         }
     }
 }
