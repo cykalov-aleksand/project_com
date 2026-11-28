@@ -2,6 +2,7 @@ package org.example.projectCom.service;
 
 
 import org.example.projectCom.service.panelService.AgentStatusService;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -27,7 +28,7 @@ public class AgentSocketHandler extends TextWebSocketHandler {
     }
 
     @Override
-    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
+    protected void handleTextMessage(WebSocketSession session, @NonNull TextMessage message) throws IOException {
         if (!"true".equals(session.getAttributes().get("auth"))) {
             // первое сообщение агента — токен
             Optional<String> user = tokenService.validate(message.getPayload().trim());
@@ -67,7 +68,7 @@ public class AgentSocketHandler extends TextWebSocketHandler {
         }
     }
        @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+    public void afterConnectionClosed(WebSocketSession session, @NonNull CloseStatus status) {
         String username = (String) session.getAttributes().get("username");
         if (username != null) {
             agentStatusService.setDisconnected(username);
