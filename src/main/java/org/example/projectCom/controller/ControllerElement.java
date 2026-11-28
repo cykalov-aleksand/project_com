@@ -4,16 +4,19 @@ import jakarta.persistence.EntityNotFoundException;
 import org.example.projectCom.dto.EquipmentObjectDto;
 import org.example.projectCom.dto.PanelTestResult;
 import org.example.projectCom.port.SerialPortService;
+import org.example.projectCom.service.AgentTokenService;
 import org.example.projectCom.service.ObjectService;
 import com.fazecast.jSerialComm.SerialPort;
 import lombok.RequiredArgsConstructor;
 import org.example.projectCom.service.PanelComService;
 import org.example.projectCom.service.errors.SerialPortException;
+import org.example.projectCom.service.panelService.AgentStatusService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +25,16 @@ import java.util.Map;
 public class ControllerElement {
     private final SerialPortService serialPortService;
     private final ObjectService panelService;
-    private final PanelComService panelTestService;
+    private final PanelComService panelComService;
+    private final AgentTokenService agentTokenService;
+    private final AgentStatusService agentStatusService;
+    @PostMapping("/agent/token")
+    public String issueAgentToken(Principal principal, RedirectAttributes ra) {
+        String token = agentTokenService.issue(principal.getName());
+        ra.addFlashAttribute("agentToken", token);
+        ra.addFlashAttribute("portMessage", "Токен агента получен. Скопируйте его в приложение агента.");
+        return "redirect:/";
+    }
 
     @GetMapping("/com_port")
     public String choiceComPort(@RequestParam String nameComPort, RedirectAttributes ra) {
@@ -36,7 +48,7 @@ public class ControllerElement {
     }
 
     @GetMapping("/")
-    public String find(@RequestParam(required = false) String search, Model model) {
+    public String find(@RequestParam(required = false) String search, Model model,Principal principal) {
         SerialPort[] listComPort;
         try {
             listComPort = SerialPort.getCommPorts();
@@ -48,7 +60,14 @@ public class ControllerElement {
         List<EquipmentObjectDto> element = (search == null || search.isBlank())
                 ? panelService.findAllObject()
                 : panelService.findByName(search);
-
+        if (principal != null) {
+            AgentStatusService.AgentStatus status = agentStatusService.getStatus(principal.getName());
+            System.err.println(status.toString());
+            model.addAttribute("agentStatus", status);
+            model.addAttribute("currentUser", principal.getName());
+        } else {
+            model.addAttribute("agentStatus", new AgentStatusService.AgentStatus(false, null));
+        }
         model.addAttribute("listElement", element);
         model.addAttribute("search", search);
         model.addAttribute("currentPortName", serialPortService.getCurrentPortName());
@@ -90,7 +109,7 @@ public class ControllerElement {
     @PostMapping("/objects/test/{id}")
     public String sendAllPanelsForObject(@PathVariable Long id, RedirectAttributes ra) {
         try {
-            String result = panelTestService.sendObjectPanels(id);
+            String result = panelComService.sendObjectPanels(id);
             ra.addFlashAttribute("testResults", Map.of(id, new PanelTestResult(result.startsWith("Передано"), result)));
         } catch (EntityNotFoundException | IllegalStateException e) {
             ra.addFlashAttribute("testResults",
