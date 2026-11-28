@@ -265,7 +265,6 @@ public class PanelComService {
             // if (!p.isActive()) continue;
             order.add(p.getId());
         }
-
         return order;
     }
 }
