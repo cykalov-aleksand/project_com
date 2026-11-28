@@ -6,5 +6,6 @@ import java.util.List;
 
 public interface PanelSynchronisation {
     Panels save(Long panelId, int divisor, List<String> outputs);
+
     Long delete(Long panelId);
 }

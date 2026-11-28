@@ -18,15 +18,17 @@ public class SerialPortService {
     public SerialPortService(SerialPortProperties props) {
         this.props = props;
     }
+
     public SerialPort port() {
         if (!isOpen()) {
             throw new SerialPortException("Порт не открыт. Откройте COM-порт перед обменом.");
         }
         return currentPort;
     }
+
     public void open(String portName) {
         close();
-        SerialPort port = waitForPort(portName, 3000);
+        SerialPort port = waitForPort(portName);
         currentPort = port;
 
         currentPort.setBaudRate(props.getBaudRate());
@@ -50,8 +52,8 @@ public class SerialPortService {
      * Ждёт появления порта до timeoutMs: система может ещё не завершить
      * перечисление USB-устройства на момент первого запроса.
      */
-    private SerialPort waitForPort(String portName, long timeoutMs) {
-        long deadline = System.currentTimeMillis() + timeoutMs;
+    private SerialPort waitForPort(String portName) {
+        long deadline = System.currentTimeMillis() + (long) 3000;
         do {
             for (SerialPort p : SerialPort.getCommPorts()) {
                 if (p.getSystemPortName().equalsIgnoreCase(portName)) {
@@ -67,11 +69,12 @@ public class SerialPortService {
             }
         } while (true);
         throw new SerialPortException(
-                "Порт " + portName + " не найден за " + (timeoutMs / 1000) + " с. " +
+                "Порт " + portName + " не найден за " + ((long) 3000 / 1000) + " с. " +
                         "Доступны: " + Arrays.stream(SerialPort.getCommPorts())
                         .map(SerialPort::getSystemPortName)
                         .collect(Collectors.joining(", ")));
     }
+
     public void openDefault() {
         String name = props.getPortName();
         if (name == null || name.isBlank()) {

@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface ObjectRepository extends JpaRepository<EquipmentObject,Long> {
+public interface ObjectRepository extends JpaRepository<EquipmentObject, Long> {
     @Query(value = "SELECT * FROM equipment_object WHERE LOWER(name) LIKE LOWER(CONCAT('%', :name, '%'))", nativeQuery = true)
     List<EquipmentObject> findObjectByNameContaining(@Param("name") String name);
 }

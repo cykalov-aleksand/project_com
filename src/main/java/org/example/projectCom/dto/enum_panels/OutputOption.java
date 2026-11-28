@@ -54,9 +54,11 @@ public enum OutputOption {
         this.byteIndex = byteIndex;
         this.bitMask = bitMask;
     }
+
     public String maskHex() {
         return String.format("%02X", bitMask);
     }
+
     public static OutputOption byIndex(int index) {
         OutputOption[] values = values();
         if (index < 0 || index >= values.length) return null;

@@ -25,6 +25,7 @@ import static org.example.projectCom.service.panelService.service.PanelsService.
 public class PanelOutputSwitchIml implements PanelOutputSwitch {
     private final PanelsService panelsService;
     private final PanelsRepository panelsRepository;
+
     @Transactional
     public Panels save(Long panelId, Long objectId, List<String> outputs) {
         Panels panel = panelsService.getPanelById(panelId);
@@ -51,7 +52,7 @@ public class PanelOutputSwitchIml implements PanelOutputSwitch {
 // защита сохраняется: если снятое всё же пересекается с занятым,
 // значит, пришёл некорректный запрос — но через обычный флоу это недостижимо
         Set<OutputOption> removed = new HashSet<>(
-                OutputUtils.extractSelectedOutputs(panel.getOutputsJsonString(),OutputUtils.payloadOffset(panel.getNameElement())));
+                OutputUtils.extractSelectedOutputs(panel.getOutputsJsonString(), OutputUtils.payloadOffset(panel.getNameElement())));
         removed.removeAll(selected);
 
         if (!removed.isEmpty()) {

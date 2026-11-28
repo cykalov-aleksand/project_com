@@ -60,4 +60,9 @@ public class MyCache<K, V> implements HwCache<K, V> {
             }
         }
     }
+    public List<V> getAll() {
+        synchronized (cache) {
+            return new ArrayList<>(cache.values());
+        }
+    }
 }

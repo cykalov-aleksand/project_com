@@ -4,7 +4,9 @@ import org.example.projectCom.dto.enum_panels.OutputOption;
 
 import java.util.List;
 
-/** Строит payload строго по MessageStructure: пропустил поле — исключение. */
+/**
+ * Строит payload строго по MessageStructure: пропустил поле — исключение.
+ */
 public class PayloadBuffer {
     private final MessageStructure struct;
     private final byte[] data;
@@ -27,10 +29,11 @@ public class PayloadBuffer {
 
     public PayloadBuffer putUInt16(String name, int value) {
         int offset = struct.offsetOf(name);
-        data[offset]     = (byte) ((value >> 8) & 0xFF); // старший байт — первым
-        data[offset + 1] = (byte) (value & 0xFF);        // младший — вторым
+        data[offset+1] = (byte) ((value >> 8) & 0xFF); // старший байт — первым
+        data[offset] = (byte) (value & 0xFF);        // младший — вторым
         return this;
     }
+
     /*
     превращает список выбранных выходов в 5 байт, где каждый бит — один выход
      */

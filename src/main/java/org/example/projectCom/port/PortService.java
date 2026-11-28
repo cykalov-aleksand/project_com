@@ -78,7 +78,11 @@ public class PortService {
             } catch (Exception e) {
                 log.warn("Панель {}: нет ответа (попытка {}): {}", panelId, attempt, e.getMessage());
                 // Небольшая пауза перед повтором, чтобы не спамить линию
-                try { Thread.sleep(200); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
 
@@ -92,6 +96,7 @@ public class PortService {
                 Arrays.copyOfRange(request, 0, 6),
                 Arrays.copyOfRange(response, 0, 6));
     }
+
     // Простой метод для контроллера: получить статус по ID панели
     public String getStatus(Long panelId) {
         return lastStatus.getOrDefault(panelId, "Ожидание");
