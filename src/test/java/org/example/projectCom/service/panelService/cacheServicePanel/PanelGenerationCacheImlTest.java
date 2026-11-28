@@ -179,4 +179,5 @@ class PanelGenerationCacheImlTest {
             verify(cachePanelService).deletePanel(PANEL_ID);
         }
     }
+
 }
