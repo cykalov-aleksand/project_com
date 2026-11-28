@@ -144,6 +144,9 @@
 <div class="card" style="border-left: 5px solid #ccc;">
     <h3>Статус агента COM-порта</h3>
 
+    <!-- всегда рендерится, служит маркером для скрипта -->
+    <span id="status-user" th:text="${currentUser}" style="display:none;"></span>
+
     <p th:if="${agentStatus.connected}">
         <span style="color: #2e7d32; font-weight: bold;">● Подключено</span>
         для пользователя: <strong th:text="${currentUser}"></strong>
@@ -155,10 +158,6 @@
         <span style="color: #c62828; font-weight: bold;">● Не подключено</span>
         <br>
         <small>Запустите агента в отдельном приложении и авторизуйтесь.</small>
-    </p>
-
-    <p class="hint" style="margin-top: 10px; font-size: 0.9em;">
-        Статус обновляется автоматически при каждом входе на страницу.
     </p>
 </div>
 
@@ -219,6 +218,20 @@
 
 <br>
 <a href="/create" class="btn btn-create">Создать новый элемент</a>
+<script src="/js/sockjs.min.js"></script>
+<script src="/js/stomp.min.js"></script>
+<script>
+    const stomp = Stomp.over(new SockJS('/ws')); // ← подставь свой эндпоинт из шага 2
 
+    stomp.connect({}, function () {
+        stomp.subscribe('/topic/agent-status', function (message) {
+            const data = JSON.parse(message.body);       // разбираем JSON
+            const me = document.getElementById('status-user'); // чей статус показан
+            if (me && me.textContent === data.username) {
+                location.reload();                       // страница перезагрузится с новым статусом
+            }
+        });
+    });
+</script>
 </body>
 </html>
