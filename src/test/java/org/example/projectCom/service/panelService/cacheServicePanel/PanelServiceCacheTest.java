@@ -79,7 +79,7 @@ class PanelServiceCacheTest {
             object.setId(OBJECT_ID);
             Panels live = new Panels();
             live.setId(PANEL_ID);
-            live.setObject(object);          // ← вот это не хватало
+            live.setObject(object);
 
             when(panelsService.getPanelById(PANEL_ID)).thenReturn(live);
             when(panelsService.findPanelsIdObject(OBJECT_ID))
@@ -107,7 +107,7 @@ class PanelServiceCacheTest {
                 Long returnedObjectId = cacheService.deletePanel(PANEL_ID);
 
                 assertThat(returnedObjectId).isEqualTo(OBJECT_ID);
-                cacheService.findPanelsIdObject(OBJECT_ID);            // должен пойти в БД снова
+                cacheService.findPanelsIdObject(OBJECT_ID);
                 verify(panelsService, times(2)).findPanelsIdObject(OBJECT_ID);
             }
 
