@@ -52,7 +52,6 @@ public class PayloadBuffer {
     }
 
     public byte[] build() {
-        if (cursor < struct.fields().size()) { /* можно сделать строгий чек «все поля заполнены» */ }
-        return data;
+       return data;
     }
 }

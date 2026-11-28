@@ -97,7 +97,7 @@
 </head>
 <body>
 <div class="card">
-    <h2>Выберите COM порт для работы с коммутатором</h2>
+    <h2>Выберите COM порт для работы с коммутатором, на стороне сервера</h2>
 
     <p th:if="${#lists.isEmpty(listComPort)}" class="error" style="margin-top: 0;">
         COM-порты не обнаружены. Подключите устройство и обновите страницу.
@@ -120,6 +120,46 @@
         <button type="submit" class="btn">Выбрать</button>
     </form>
     <p class="hint">Порт используется для обмена с панелями коммутации во время сеанса работы.</p>
+</div>
+<div class="card">
+    <h2>Удалённый COM-порт (агент)</h2>
+
+    <!-- Токен показывается только после нажатия кнопки -->
+    <p th:if="${agentToken != null}">
+        Токен агента:
+        <input type="text" class="token-field" readonly
+               th:value="${agentToken}"
+               onclick="this.select()"
+               style="width: 40ch; font-family: monospace;">
+    </p>
+    <p th:if="${agentToken != null}" class="hint">
+        Токен действует сутки. Скопируйте его и вставьте в поле «Токен» в приложении агента.
+    </p>
+
+    <form th:action="@{/agent/token}" method="post">
+        <button type="submit" class="btn">Получить токен агента</button>
+    </form>
+    <p class="hint">Кнопка выдаёт токен для подключения агента к серверу с удалённым COM-портом.</p>
+</div>
+<div class="card" style="border-left: 5px solid #ccc;">
+    <h3>Статус агента COM-порта</h3>
+
+    <p th:if="${agentStatus.connected}">
+        <span style="color: #2e7d32; font-weight: bold;">● Подключено</span>
+        для пользователя: <strong th:text="${currentUser}"></strong>
+        <br>
+        <small>Последний обмен: <span th:text="${#temporals.format(agentStatus.lastSeen, 'HH:mm:ss')}"></span></small>
+    </p>
+
+    <p th:unless="${agentStatus.connected}">
+        <span style="color: #c62828; font-weight: bold;">● Не подключено</span>
+        <br>
+        <small>Запустите агента в отдельном приложении и авторизуйтесь.</small>
+    </p>
+
+    <p class="hint" style="margin-top: 10px; font-size: 0.9em;">
+        Статус обновляется автоматически при каждом входе на страницу.
+    </p>
 </div>
 
 <h1>Список ячеек</h1>
